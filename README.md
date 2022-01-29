@@ -1,0 +1,1 @@
+Scalapay API example
