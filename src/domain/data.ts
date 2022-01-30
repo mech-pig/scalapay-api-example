@@ -1,4 +1,33 @@
 import * as t from "io-ts";
+import * as E from "fp-ts/Either";
+import BigNumber from "bignumber.js";
+import { pipe } from "fp-ts/function";
+
+export const PriceCodec = new t.Type<BigNumber, string, unknown>(
+  "PriceCodec",
+  (u): u is BigNumber => u instanceof BigNumber,
+  (u, c) =>
+    pipe(
+      t.string.validate(u, c),
+      E.chain((s) => {
+        const d = new BigNumber(s);
+        // BigNumber.prototype.isPositive returns true if 0
+        return d.isPositive() ? t.success(d) : t.failure(u, c);
+      }),
+    ),
+  (a) => a.toFixed(),
+);
+export type Price = t.TypeOf<typeof PriceCodec>;
+
+export const ProductCodec = t.type({
+  gtin: t.string,
+  sku: t.string,
+  name: t.string,
+  brand: t.string,
+  category: t.string,
+  unitPriceInEur: PriceCodec,
+});
+export type Product = t.TypeOf<typeof ProductCodec>;
 
 export const PhoneNumberCodec = t.string;
 export const CountryCodeCodec = t.string;
@@ -32,9 +61,16 @@ export const BillingInfoCodec = t.partial({
 });
 export type BillingInfo = t.TypeOf<typeof BillingInfoCodec>;
 
+export const OrderItemCodec = t.type({
+  sku: t.string,
+  quantity: t.number,
+});
+export type OrderItem = t.TypeOf<typeof OrderItemCodec>;
+
 export const OrderCodec = t.intersection([
   t.type({
     shipping: ShippingInfoCodec,
+    items: t.array(OrderItemCodec),
   }),
   t.partial({
     billing: BillingInfoCodec,
