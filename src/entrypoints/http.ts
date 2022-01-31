@@ -15,16 +15,26 @@ function create(application: Application): ExpressApplication {
         (validationErrors) => {
           res.status(422);
           res.json({
-            type: "Invalid Request",
+            type: "InvalidRequest",
             errors: failure(validationErrors),
           });
         },
         (createOrderRequest) => {
           application
             .createOrder(createOrderRequest)
-            .then((createdOrder) => {
-              res.json(createdOrder);
-            })
+            .then((result) =>
+              pipe(
+                result,
+                fold(
+                  (error) => ({ status: 400, data: error as {} }),
+                  (orderCreated) => ({ status: 200, data: orderCreated as {} }),
+                ),
+                ({ status, data }) => {
+                  res.status(status);
+                  res.json(data);
+                },
+              ),
+            )
             .catch((error) => {
               console.error(error);
               res.status(500);
