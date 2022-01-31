@@ -1,4 +1,5 @@
 import * as t from "io-ts";
+import { nonEmptyArray } from "io-ts-types";
 import * as E from "fp-ts/Either";
 import BigNumber from "bignumber.js";
 import { pipe } from "fp-ts/function";
@@ -12,7 +13,9 @@ export const PriceCodec = new t.Type<BigNumber, string, unknown>(
       E.chain((s) => {
         const d = new BigNumber(s);
         // BigNumber.prototype.isPositive returns true if 0
-        return d.isPositive() ? t.success(d) : t.failure(u, c);
+        return d.isPositive()
+          ? t.success(d)
+          : t.failure(u, c, "Must be a non negative decimal number");
       }),
     ),
   (a) => a.toFixed(),
@@ -70,7 +73,7 @@ export type OrderItem = t.TypeOf<typeof OrderItemCodec>;
 export const OrderCodec = t.intersection([
   t.type({
     shipping: ShippingInfoCodec,
-    items: t.array(OrderItemCodec),
+    items: nonEmptyArray(OrderItemCodec),
   }),
   t.partial({
     billing: BillingInfoCodec,

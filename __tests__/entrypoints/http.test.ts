@@ -1,9 +1,11 @@
 import supertest from "supertest";
+import BigNumber from "bignumber.js";
+import { pipe } from "fp-ts/function";
+import { NonEmptyArray, mapWithIndex } from "fp-ts/NonEmptyArray";
 
 import createApplication, { CreateOrderRequest } from "@domain/application";
 import createHttpServer from "@entrypoints/http";
 import { Product } from "@domain/data";
-import BigNumber from "bignumber.js";
 
 function testClient(products: Product[]) {
   const application = createApplication(products);
@@ -12,7 +14,7 @@ function testClient(products: Product[]) {
 }
 
 describe("createOrder", () => {
-  const defaultAvailableProducts: Product[] = [
+  const defaultAvailableProducts: NonEmptyArray<Product> = [
     {
       sku: "0",
       name: "product-0",
@@ -50,10 +52,13 @@ describe("createOrder", () => {
       },
       phoneNumber: "+39 000 000000",
     },
-    items: defaultAvailableProducts.map((value, index) => ({
-      ...value,
-      quantity: index + 1,
-    })),
+    items: pipe(
+      defaultAvailableProducts,
+      mapWithIndex((index, value) => ({
+        sku: value.sku,
+        quantity: index + 1,
+      })),
+    ),
   };
 
   const omit = <A, P extends keyof A>(prop: P, a: A): Omit<A, P> => {
@@ -112,6 +117,7 @@ describe("createOrder", () => {
       },
     ],
     ["missing: `items`", omit("items", defaultRequest)],
+    ["invalid: `items` is empty", { ...defaultRequest, items: [] }],
     [
       "missing: `items.*.sku`",
       {
