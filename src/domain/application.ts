@@ -1,4 +1,5 @@
 import * as t from "io-ts";
+import { nonEmptyArray } from "io-ts-types";
 import { difference } from "fp-ts/Array";
 import * as E from "fp-ts/Either";
 import { Eq as EqString } from "fp-ts/string";
@@ -30,7 +31,7 @@ export type CreateOrderResult = E.Either<
 export const CreateOrderRequest = t.intersection([
   t.type({
     shipping: ShippingInfoCodec,
-    items: t.array(OrderItemCodec),
+    items: nonEmptyArray(OrderItemCodec),
   }),
   t.partial({
     billing: BillingInfoCodec,
