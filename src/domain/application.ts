@@ -8,10 +8,11 @@ import {
   OrderItemCodec,
   ShippingInfoCodec,
   Product,
+  Order,
 } from "@domain/data";
 
 export type OrderCreated = {
-  id: string;
+  paymentGatewayRedirectUrl: string;
 };
 
 export const UnavailableProductsErrorCodec = t.type({
@@ -24,7 +25,7 @@ export type UnavailableProductsError = t.TypeOf<
 >;
 
 export type CreateOrderResult = E.Either<
-  UnavailableProductsError,
+  UnavailableProductsError | PaymentGatewayError,
   OrderCreated
 >;
 
@@ -43,7 +44,24 @@ export interface Application {
   createOrder(request: CreateOrderRequest): Promise<CreateOrderResult>;
 }
 
-export default function createApplication(products: Product[]): Application {
+export const PaymentGatewayErrorCodec = t.type({
+  type: t.literal("PaymentGatewayError"),
+});
+export type PaymentGatewayError = t.TypeOf<typeof PaymentGatewayErrorCodec>;
+
+export const PaymentStartedCodec = t.type({ redirectUrl: t.string });
+export type PaymentStarted = t.TypeOf<typeof PaymentStartedCodec>;
+
+export type StartPaymentResult = E.Either<PaymentGatewayError, PaymentStarted>;
+
+export interface PaymentGateway {
+  startPayment(order: Order): Promise<StartPaymentResult>;
+}
+
+export default function createApplication(
+  products: Product[],
+  paymentGateway: PaymentGateway,
+): Application {
   async function createOrder(
     request: CreateOrderRequest,
   ): Promise<CreateOrderResult> {
@@ -57,8 +75,12 @@ export default function createApplication(products: Product[]): Application {
         E.left({ type: "UnavailableProducts", skus: unavailableProductSkus }),
       );
     }
-
-    return Promise.resolve(E.right({ id: request.shipping.name }));
+    const order: Order = { ...request };
+    return paymentGateway
+      .startPayment(order)
+      .then(
+        E.map((result) => ({ paymentGatewayRedirectUrl: result.redirectUrl })),
+      );
   }
 
   return { createOrder };

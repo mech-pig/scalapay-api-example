@@ -1,14 +1,27 @@
 import supertest from "supertest";
 import BigNumber from "bignumber.js";
+import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 import { NonEmptyArray, mapWithIndex } from "fp-ts/NonEmptyArray";
 
-import createApplication, { CreateOrderRequest } from "@domain/application";
+import createApplication, {
+  CreateOrderRequest,
+  PaymentGateway,
+  StartPaymentResult,
+} from "@domain/application";
 import createHttpServer from "@entrypoints/http";
-import { Product } from "@domain/data";
+import { Order, Product } from "@domain/data";
 
-function testClient(products: Product[]) {
-  const application = createApplication(products);
+const defaultPaymentGateway: PaymentGateway = {
+  startPayment: (order: Order) =>
+    Promise.resolve(E.right({ redirectUrl: order.shipping.name })),
+};
+
+function testClient(products: Product[], paymentGateway?: PaymentGateway) {
+  const application = createApplication(
+    products,
+    paymentGateway ?? defaultPaymentGateway,
+  );
   const server = createHttpServer(application);
   return supertest(server);
 }
@@ -140,7 +153,7 @@ describe("createOrder", () => {
     expect(response.body.type).toStrictEqual("InvalidRequest");
   });
 
-  test("Error: one or more products not found", async () => {
+  test("Error - UnavailableProducts", async () => {
     const availableProducts = [...defaultAvailableProducts];
     const availableProductSkus = availableProducts.map((p) => p.sku);
     const notAvailableProductsSkus = ["4598712487", "23409823409"];
@@ -160,6 +173,72 @@ describe("createOrder", () => {
     expect(response.body).toStrictEqual({
       type: "UnavailableProducts",
       skus: notAvailableProductsSkus,
+    });
+  });
+
+  test.each([
+    [
+      "PaymentGatewayError",
+      (_: Order): Promise<StartPaymentResult> =>
+        Promise.resolve(E.left({ type: "PaymentGatewayError" })),
+      500,
+      { type: "PaymentGatewayError" },
+    ],
+    [
+      "unhandled",
+      (_: Order): Promise<StartPaymentResult> => Promise.reject(),
+      500,
+      { type: "InternalServerError" },
+    ],
+  ])(
+    "Error - PaymentGateway/%s",
+    async (
+      _,
+      startPaymentMock: (order: Order) => Promise<StartPaymentResult>,
+      expectedStatus: number,
+      expectedPayload: {},
+    ) => {
+      const request = defaultRequest;
+      const products = defaultAvailableProducts;
+      const paymentGateway = { startPayment: startPaymentMock };
+      const response = await testClient(products, paymentGateway)
+        .post("/orders")
+        .send(request);
+
+      expect(response.status).toBe(expectedStatus);
+      expect(response.body).toStrictEqual(expectedPayload);
+    },
+  );
+
+  test("Success - order payment is started", async () => {
+    const request = defaultRequest;
+    const products = defaultAvailableProducts;
+
+    const paymentGateway = {
+      startPayment: jest.fn(defaultPaymentGateway.startPayment),
+    };
+    await testClient(products, paymentGateway).post("/orders").send(request);
+
+    expect(paymentGateway.startPayment).toHaveBeenCalledTimes(1);
+    expect(paymentGateway.startPayment).toHaveBeenCalledWith(request);
+  });
+
+  test("Success - payment details are returned", async () => {
+    const request = defaultRequest;
+    const products = defaultAvailableProducts;
+    const responseFromPaymentGateway = { redirectUrl: "sentinel" };
+
+    const paymentGateway = {
+      startPayment: (_: Order) =>
+        Promise.resolve(E.right(responseFromPaymentGateway)),
+    };
+    const response = await testClient(products, paymentGateway)
+      .post("/orders")
+      .send(request);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual({
+      paymentGatewayRedirectUrl: responseFromPaymentGateway.redirectUrl,
     });
   });
 });

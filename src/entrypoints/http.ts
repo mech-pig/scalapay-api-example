@@ -26,7 +26,12 @@ function create(application: Application): ExpressApplication {
               pipe(
                 result,
                 fold(
-                  (error) => ({ status: 400, data: error as {} }),
+                  (error) => {
+                    if (error.type === "UnavailableProducts") {
+                      return { status: 400, data: error as {} };
+                    }
+                    return { status: 500, data: error as {} };
+                  },
                   (orderCreated) => ({ status: 200, data: orderCreated as {} }),
                 ),
                 ({ status, data }) => {
@@ -39,7 +44,7 @@ function create(application: Application): ExpressApplication {
               console.error(error);
               res.status(500);
               res.json({
-                type: "Internal Server Error",
+                type: "InternalServerError",
               });
             });
         },
