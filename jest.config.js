@@ -3,8 +3,6 @@ const { pathsToModuleNameMapper } = require("ts-jest");
 const { compilerOptions } = require("./tsconfig.prod");
 
 module.exports = {
-  preset: "ts-jest",
-  testEnvironment: "node",
   bail: 3,
   collectCoverage: true,
   collectCoverageFrom: ["src/**/*.{ts,js}"],
@@ -13,5 +11,8 @@ module.exports = {
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
     prefix: "<rootDir>/src",
   }),
+  preset: "ts-jest",
+  testEnvironment: "node",
+  testMatch: ["**/__tests__/**/?(*.)+(spec|test).[jt]s?(x)"],
   verbose: true,
 };
