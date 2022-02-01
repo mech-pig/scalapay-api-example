@@ -1,7 +1,8 @@
 import BigNumber from "bignumber.js";
+import * as E from "fp-ts/Either";
 import createHttpServer from "@entrypoints/http";
-import createApplication from "@domain/application";
-import { Product } from "@domain/data";
+import createApplication, { PaymentGateway } from "@domain/application";
+import { Product, Order } from "@domain/data";
 
 const products: Product[] = [
   {
@@ -29,7 +30,12 @@ const products: Product[] = [
     category: "home",
   },
 ];
-const application = createApplication(products);
+
+const dummyPaymentGateway: PaymentGateway = {
+  startPayment: (order: Order) =>
+    Promise.resolve(E.right({ redirectUrl: order.shipping.name })),
+};
+const application = createApplication(products, dummyPaymentGateway);
 const server = createHttpServer(application).listen(8080, () =>
   console.log("Server listenning on port 8080"),
 );
