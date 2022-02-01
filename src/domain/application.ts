@@ -1,14 +1,15 @@
 import * as t from "io-ts";
 import { nonEmptyArray } from "io-ts-types";
-import { difference } from "fp-ts/Array";
 import * as E from "fp-ts/Either";
-import { Eq as EqString } from "fp-ts/string";
+import { NonEmptyArray, reduce } from "fp-ts/NonEmptyArray";
+import { pipe } from "fp-ts/function";
+
 import {
   BillingInfoCodec,
-  OrderItemCodec,
   ShippingInfoCodec,
   Product,
   Order,
+  OrderItem,
 } from "@domain/data";
 
 export type OrderCreated = {
@@ -32,7 +33,7 @@ export type CreateOrderResult = E.Either<
 export const CreateOrderRequest = t.intersection([
   t.type({
     shipping: ShippingInfoCodec,
-    items: nonEmptyArray(OrderItemCodec),
+    items: nonEmptyArray(t.type({ sku: t.string, quantity: t.number })),
   }),
   t.partial({
     billing: BillingInfoCodec,
@@ -65,17 +66,53 @@ export default function createApplication(
   async function createOrder(
     request: CreateOrderRequest,
   ): Promise<CreateOrderResult> {
-    const requestedProductSkus = request.items.map((p) => p.sku);
-    const unavailableProductSkus = difference(EqString)(
-      requestedProductSkus,
-      products.map((p) => p.sku),
+    const requestedItems = pipe(
+      request.items,
+      reduce(
+        {
+          orderItems: [] as OrderItem[],
+          productNotFoundSkus: [] as string[],
+        },
+        (acc, item) => {
+          const product = products.find((p) => p.sku === item.sku);
+          return product
+            ? {
+                ...acc,
+                orderItems: [
+                  ...acc.orderItems,
+                  {
+                    sku: product.sku,
+                    name: product.name,
+                    gtin: product.gtin,
+                    category: product.category,
+                    brand: product.brand,
+                    quantity: item.quantity,
+                    netPriceInEur: product.unitPriceInEur.times(item.quantity),
+                  },
+                ],
+              }
+            : {
+                ...acc,
+                productNotFoundSkus: [...acc.productNotFoundSkus, item.sku],
+              };
+        },
+      ),
     );
-    if (unavailableProductSkus.length > 0) {
+
+    if (requestedItems.productNotFoundSkus.length > 0) {
       return Promise.resolve(
-        E.left({ type: "UnavailableProducts", skus: unavailableProductSkus }),
+        E.left({
+          type: "UnavailableProducts",
+          skus: requestedItems.productNotFoundSkus,
+        }),
       );
     }
-    const order: Order = { ...request };
+
+    const order: Order = {
+      ...request,
+      items: requestedItems.orderItems as NonEmptyArray<OrderItem>,
+    };
+
     return paymentGateway
       .startPayment(order)
       .then(

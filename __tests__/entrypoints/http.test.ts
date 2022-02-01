@@ -2,7 +2,7 @@ import supertest from "supertest";
 import BigNumber from "bignumber.js";
 import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
-import { NonEmptyArray, mapWithIndex } from "fp-ts/NonEmptyArray";
+import { NonEmptyArray, map, mapWithIndex } from "fp-ts/NonEmptyArray";
 
 import createApplication, {
   CreateOrderRequest,
@@ -211,8 +211,74 @@ describe("createOrder", () => {
   );
 
   test("Success - order payment is started", async () => {
-    const request = defaultRequest;
-    const products = defaultAvailableProducts;
+    const orderProducts: NonEmptyArray<Product> = [
+      {
+        sku: "included-product-0",
+        name: "included-product-0",
+        gtin: "included-product-0",
+        brand: "acme",
+        unitPriceInEur: new BigNumber("9.99"),
+        category: "garden",
+      },
+      {
+        sku: "included-product-1",
+        name: "included-product-1",
+        gtin: "included-product-1",
+        brand: "acme",
+        unitPriceInEur: new BigNumber("0.63"),
+        category: "electronic",
+      },
+    ];
+    const otherProducts: NonEmptyArray<Product> = [
+      {
+        sku: "excluded-product-0",
+        name: "excluded-product-0",
+        gtin: "excluded-product-0",
+        brand: "acme",
+        unitPriceInEur: new BigNumber("1.59"),
+        category: "clothes",
+      },
+      {
+        sku: "excluded-product-1",
+        name: "excluded-product-1",
+        gtin: "excluded-product-1",
+        brand: "acme",
+        unitPriceInEur: new BigNumber("8.97"),
+        category: "food",
+      },
+    ];
+
+    const expectedOrder: Order = {
+      ...defaultRequest,
+      items: pipe(
+        orderProducts,
+        mapWithIndex((index, order) => {
+          const quantity = index + 1;
+          return {
+            sku: order.sku,
+            name: order.name,
+            brand: order.brand,
+            gtin: order.gtin,
+            category: order.category,
+            quantity,
+            netPriceInEur: order.unitPriceInEur.times(quantity),
+          };
+        }),
+      ),
+    };
+
+    const request = {
+      ...expectedOrder,
+      items: pipe(
+        expectedOrder.items,
+        map((order) => ({ sku: order.sku, quantity: order.quantity })),
+      ),
+    };
+
+    const products = [
+      ...otherProducts,
+      ...orderProducts,
+    ] as NonEmptyArray<Product>;
 
     const paymentGateway = {
       startPayment: jest.fn(defaultPaymentGateway.startPayment),
@@ -220,7 +286,7 @@ describe("createOrder", () => {
     await testClient(products, paymentGateway).post("/orders").send(request);
 
     expect(paymentGateway.startPayment).toHaveBeenCalledTimes(1);
-    expect(paymentGateway.startPayment).toHaveBeenCalledWith(request);
+    expect(paymentGateway.startPayment).toHaveBeenCalledWith(expectedOrder);
   });
 
   test("Success - payment details are returned", async () => {
