@@ -66,7 +66,12 @@ export type BillingInfo = t.TypeOf<typeof BillingInfoCodec>;
 
 export const OrderItemCodec = t.type({
   sku: t.string,
+  gtin: t.string,
+  name: t.string,
+  brand: t.string,
+  category: t.string,
   quantity: t.number,
+  netPriceInEur: PriceCodec,
 });
 export type OrderItem = t.TypeOf<typeof OrderItemCodec>;
 
