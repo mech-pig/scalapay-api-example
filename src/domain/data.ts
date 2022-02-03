@@ -75,8 +75,22 @@ export const OrderItemCodec = t.type({
 });
 export type OrderItem = t.TypeOf<typeof OrderItemCodec>;
 
+export const UserCodec = t.intersection([
+  t.type({
+    firstName: t.string,
+    lastName: t.string,
+  }),
+  t.partial({
+    email: t.string,
+    phoneNumber: PhoneNumberCodec,
+  }),
+]);
+
+export type User = t.TypeOf<typeof UserCodec>;
+
 export const OrderCodec = t.intersection([
   t.type({
+    user: UserCodec,
     shipping: ShippingInfoCodec,
     items: nonEmptyArray(OrderItemCodec),
   }),

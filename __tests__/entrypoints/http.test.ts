@@ -55,6 +55,12 @@ describe("createOrder", () => {
   ];
 
   const defaultRequest: CreateOrderRequest = {
+    user: {
+      firstName: "first-name",
+      lastName: "last-name",
+      email: "first.last@test.com",
+      phoneNumber: "+1 23 456 789",
+    },
     shipping: {
       name: "test",
       address: {
@@ -80,6 +86,15 @@ describe("createOrder", () => {
   };
 
   test.each([
+    ["missing: `user`", omit("user", defaultRequest)],
+    [
+      "missing: `user.firstName`",
+      { ...defaultRequest, user: omit("firstName", defaultRequest.user) },
+    ],
+    [
+      "missing: `user.lastName`",
+      { ...defaultRequest, user: omit("lastName", defaultRequest.user) },
+    ],
     ["missing: `shipping`", omit("shipping", defaultRequest)],
     [
       "missing: `shipping.name`",
