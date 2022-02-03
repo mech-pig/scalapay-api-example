@@ -10,6 +10,7 @@ import {
   Product,
   Order,
   OrderItem,
+  UserCodec,
 } from "@domain/data";
 
 export type OrderCreated = {
@@ -32,6 +33,7 @@ export type CreateOrderResult = E.Either<
 
 export const CreateOrderRequest = t.intersection([
   t.type({
+    user: UserCodec,
     shipping: ShippingInfoCodec,
     items: nonEmptyArray(t.type({ sku: t.string, quantity: t.number })),
   }),
