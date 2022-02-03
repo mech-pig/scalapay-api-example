@@ -19,7 +19,7 @@ check:
 	npx tsc --noEmit
 
 .PHONY: test
-test: install-dev
+test:
 	npx jest
 
 .PHONY: build
