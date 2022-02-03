@@ -11,11 +11,11 @@ import createApplication, {
 } from "@domain/application";
 import createHttpServer from "@entrypoints/http";
 import { Order, Product } from "@domain/data";
+import createMockPaymentGateway from "@adapters/development/payment-gateway";
 
-const defaultPaymentGateway: PaymentGateway = {
-  startPayment: (order: Order) =>
-    Promise.resolve(E.right({ redirectUrl: order.shipping.name })),
-};
+import { omit } from "../utils";
+
+const defaultPaymentGateway = createMockPaymentGateway();
 
 function testClient(products: Product[], paymentGateway?: PaymentGateway) {
   const application = createApplication(
@@ -78,11 +78,6 @@ describe("createOrder", () => {
         quantity: index + 1,
       })),
     ),
-  };
-
-  const omit = <A, P extends keyof A>(prop: P, a: A): Omit<A, P> => {
-    const { [prop]: _, ...toReturn } = a;
-    return toReturn;
   };
 
   test.each([

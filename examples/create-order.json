@@ -1,0 +1,26 @@
+{
+  "user": {
+    "firstName": "test.user.firstName",
+    "lastName": "test.user.lastName"
+  },
+  "shipping": {
+    "name": "test",
+    "address": {
+      "countryCode": "IT",
+      "city": "Milano",
+      "postCode": "20100",
+      "addressLine": "Vicolo Stretto, 1"
+    },
+    "phoneNumber": "+39 000 000000"
+  },
+  "items": [
+    {
+      "sku": "0",
+      "quantity": 1
+    },
+    {
+      "sku": "1",
+      "quantity": 3
+    }
+  ]
+}
