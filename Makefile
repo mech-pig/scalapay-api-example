@@ -9,13 +9,18 @@ install-dev:
 dev: install-dev
 	@$(DEV_ENV_VARS) npx ts-node-dev -r tsconfig-paths/register src/index.ts
 
-.PHONY: test
-test: install-dev
-	npx jest
-
 .PHONY: format
 format:
 	npx prettier --write .
+
+.PHONY: check
+check:
+	npx prettier --check .
+	npx tsc --noEmit
+
+.PHONY: test
+test: install-dev
+	npx jest
 
 .PHONY: build
 build:
