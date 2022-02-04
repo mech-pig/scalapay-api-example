@@ -3,6 +3,7 @@ import { nonEmptyArray } from "io-ts-types";
 import * as E from "fp-ts/Either";
 import BigNumber from "bignumber.js";
 import { pipe } from "fp-ts/function";
+import { reduce } from "fp-ts/NonEmptyArray";
 
 export const PriceCodec = new t.Type<BigNumber, string, unknown>(
   "PriceCodec",
@@ -22,6 +23,14 @@ export const PriceCodec = new t.Type<BigNumber, string, unknown>(
 );
 export type Price = t.TypeOf<typeof PriceCodec>;
 
+export const VatCodec = t.union([
+  t.literal(0),
+  t.literal(4),
+  t.literal(10),
+  t.literal(22),
+]);
+export type Vat = t.TypeOf<typeof VatCodec>;
+
 export const ProductCodec = t.type({
   gtin: t.string,
   sku: t.string,
@@ -29,6 +38,7 @@ export const ProductCodec = t.type({
   brand: t.string,
   category: t.string,
   unitPriceInEur: PriceCodec,
+  vat: VatCodec,
 });
 export type Product = t.TypeOf<typeof ProductCodec>;
 
@@ -72,6 +82,7 @@ export const OrderItemCodec = t.type({
   category: t.string,
   quantity: t.number,
   netPriceInEur: PriceCodec,
+  vat: VatCodec,
 });
 export type OrderItem = t.TypeOf<typeof OrderItemCodec>;
 
@@ -99,3 +110,29 @@ export const OrderCodec = t.intersection([
   }),
 ]);
 export type Order = t.TypeOf<typeof OrderCodec>;
+
+export const OrderAmountCodec = t.type({
+  totalInEur: PriceCodec,
+  taxInEur: PriceCodec,
+});
+
+export type OrderAmount = t.TypeOf<typeof OrderAmountCodec>;
+
+export function getOrderAmount(order: Order): OrderAmount {
+  const zero: OrderAmount = {
+    totalInEur: new BigNumber(0),
+    taxInEur: new BigNumber(0),
+  };
+
+  return pipe(
+    order.items,
+    reduce(zero, (amount, item) => {
+      const vatPercentage = new BigNumber("0.01").times(item.vat);
+      const vatAmountInEur = item.netPriceInEur.times(vatPercentage);
+      return {
+        taxInEur: amount.taxInEur.plus(vatAmountInEur),
+        totalInEur: amount.totalInEur.plus(item.netPriceInEur),
+      };
+    }),
+  );
+}

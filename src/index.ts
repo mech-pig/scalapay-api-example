@@ -19,6 +19,7 @@ const products: Product[] = [
     brand: "acme",
     unitPriceInEur: new BigNumber("9.99"),
     category: "clothes",
+    vat: 22,
   },
   {
     sku: "1",
@@ -27,6 +28,7 @@ const products: Product[] = [
     brand: "acme",
     unitPriceInEur: new BigNumber("17.54"),
     category: "electronic",
+    vat: 22,
   },
   {
     sku: "2",
@@ -35,6 +37,7 @@ const products: Product[] = [
     brand: "acme",
     unitPriceInEur: new BigNumber("1.12"),
     category: "home",
+    vat: 22,
   },
 ];
 
