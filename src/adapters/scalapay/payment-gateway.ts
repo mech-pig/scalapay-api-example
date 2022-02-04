@@ -4,7 +4,7 @@ import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 
 import { PaymentGateway, StartPaymentResult } from "@domain/application";
-import { Order } from "@domain/data";
+import { getOrderAmount, Order } from "@domain/data";
 
 export const SuccessResponseCodec = t.type({
   token: t.string,
@@ -49,6 +49,7 @@ export type CheckoutShippingData = {
 
 export type CheckoutRequestData = {
   totalAmount: { amount: string; currency: "EUR" };
+  taxAmount: { amount: string; currency: "EUR" };
   consumer: CheckoutConsumerData;
   billing?: CheckoutBillingData;
   shipping: CheckoutShippingData;
@@ -84,8 +85,16 @@ export default function createScalapayGateway(
   });
 
   async function startPayment(order: Order): Promise<StartPaymentResult> {
+    const orderAmount = getOrderAmount(order);
     const requestData: CheckoutRequestData = {
-      totalAmount: { amount: "0.01", currency: "EUR" },
+      totalAmount: {
+        amount: orderAmount.totalInEur.toFixed(),
+        currency: "EUR",
+      },
+      taxAmount: {
+        amount: orderAmount.taxInEur.toFixed(),
+        currency: "EUR",
+      },
       consumer: {
         givenNames: order.user.firstName,
         surname: order.user.lastName,

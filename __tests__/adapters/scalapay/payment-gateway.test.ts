@@ -10,7 +10,7 @@ import createScalapayGateway, {
   CheckoutConsumerData,
   CheckoutShippingData,
 } from "@adapters/scalapay/payment-gateway";
-import { Order } from "@domain/data";
+import { getOrderAmount, Order } from "@domain/data";
 
 import { omit } from "../../utils";
 
@@ -64,6 +64,7 @@ const fullOrder = {
       category: "electronic",
       netPriceInEur: new BigNumber("18.54"),
       quantity: 2,
+      vat: 10,
     },
     {
       sku: "2",
@@ -73,6 +74,7 @@ const fullOrder = {
       category: "home",
       netPriceInEur: new BigNumber("3.33"),
       quantity: 3,
+      vat: 4,
     },
   ],
 };
@@ -206,8 +208,14 @@ describe("startPayment", () => {
       };
       (axios.create as jest.Mock).mockReturnValue(mockClient);
 
+      const orderAmount = getOrderAmount(order as Order);
+
       const expectedArgs: CheckoutRequestData = {
-        totalAmount: { amount: "0.01", currency: "EUR" },
+        totalAmount: {
+          amount: orderAmount.totalInEur.toFixed(),
+          currency: "EUR",
+        },
+        taxAmount: { amount: orderAmount.taxInEur.toFixed(), currency: "EUR" },
         consumer: expected.consumer,
         ...(expected.billing ? { billing: expected.billing } : {}),
         shipping: expected.shipping,

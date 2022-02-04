@@ -35,6 +35,7 @@ describe("createOrder", () => {
       brand: "acme",
       unitPriceInEur: new BigNumber("9.99"),
       category: "clothes",
+      vat: 22,
     },
     {
       sku: "1",
@@ -43,6 +44,7 @@ describe("createOrder", () => {
       brand: "acme",
       unitPriceInEur: new BigNumber("17.54"),
       category: "electronic",
+      vat: 22,
     },
     {
       sku: "2",
@@ -51,6 +53,7 @@ describe("createOrder", () => {
       brand: "acme",
       unitPriceInEur: new BigNumber("1.12"),
       category: "home",
+      vat: 22,
     },
   ];
 
@@ -229,6 +232,7 @@ describe("createOrder", () => {
         brand: "acme",
         unitPriceInEur: new BigNumber("9.99"),
         category: "garden",
+        vat: 22,
       },
       {
         sku: "included-product-1",
@@ -237,6 +241,7 @@ describe("createOrder", () => {
         brand: "acme",
         unitPriceInEur: new BigNumber("0.63"),
         category: "electronic",
+        vat: 22,
       },
     ];
     const otherProducts: NonEmptyArray<Product> = [
@@ -247,6 +252,7 @@ describe("createOrder", () => {
         brand: "acme",
         unitPriceInEur: new BigNumber("1.59"),
         category: "clothes",
+        vat: 22,
       },
       {
         sku: "excluded-product-1",
@@ -255,6 +261,7 @@ describe("createOrder", () => {
         brand: "acme",
         unitPriceInEur: new BigNumber("8.97"),
         category: "food",
+        vat: 22,
       },
     ];
 
@@ -262,16 +269,17 @@ describe("createOrder", () => {
       ...defaultRequest,
       items: pipe(
         orderProducts,
-        mapWithIndex((index, order) => {
+        mapWithIndex((index, item) => {
           const quantity = index + 1;
           return {
-            sku: order.sku,
-            name: order.name,
-            brand: order.brand,
-            gtin: order.gtin,
-            category: order.category,
+            sku: item.sku,
+            name: item.name,
+            brand: item.brand,
+            gtin: item.gtin,
+            category: item.category,
             quantity,
-            netPriceInEur: order.unitPriceInEur.times(quantity),
+            netPriceInEur: item.unitPriceInEur.times(quantity),
+            vat: item.vat,
           };
         }),
       ),

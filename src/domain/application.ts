@@ -90,6 +90,7 @@ export default function createApplication(
                     brand: product.brand,
                     quantity: item.quantity,
                     netPriceInEur: product.unitPriceInEur.times(item.quantity),
+                    vat: product.vat,
                   },
                 ],
               }
