@@ -37,7 +37,7 @@ export const ProductCodec = t.type({
   name: t.string,
   brand: t.string,
   category: t.string,
-  unitPriceInEur: PriceCodec,
+  netUnitPriceInEur: PriceCodec,
   vat: VatCodec,
 });
 export type Product = t.TypeOf<typeof ProductCodec>;
@@ -74,16 +74,12 @@ export const BillingInfoCodec = t.partial({
 });
 export type BillingInfo = t.TypeOf<typeof BillingInfoCodec>;
 
-export const OrderItemCodec = t.type({
-  sku: t.string,
-  gtin: t.string,
-  name: t.string,
-  brand: t.string,
-  category: t.string,
-  quantity: t.number,
-  netPriceInEur: PriceCodec,
-  vat: VatCodec,
-});
+export const OrderItemCodec = t.intersection([
+  ProductCodec,
+  t.type({
+    quantity: t.number,
+  }),
+]);
 export type OrderItem = t.TypeOf<typeof OrderItemCodec>;
 
 export const UserCodec = t.intersection([
@@ -111,27 +107,37 @@ export const OrderCodec = t.intersection([
 ]);
 export type Order = t.TypeOf<typeof OrderCodec>;
 
-export const OrderAmountCodec = t.type({
-  totalInEur: PriceCodec,
+export const AmountCodec = t.type({
+  netInEur: PriceCodec,
   taxInEur: PriceCodec,
 });
 
-export type OrderAmount = t.TypeOf<typeof OrderAmountCodec>;
+export type Amount = t.TypeOf<typeof AmountCodec>;
 
-export function getOrderAmount(order: Order): OrderAmount {
-  const zero: OrderAmount = {
-    totalInEur: new BigNumber(0),
+export function getVatAmountInEur(
+  netAmountInEur: BigNumber,
+  vat: Vat,
+): BigNumber {
+  return new BigNumber("0.01").times(vat).times(netAmountInEur);
+}
+
+export function getOrderAmount(order: Order): Amount {
+  const zero: Amount = {
+    netInEur: new BigNumber(0),
     taxInEur: new BigNumber(0),
   };
 
   return pipe(
     order.items,
     reduce(zero, (amount, item) => {
-      const vatPercentage = new BigNumber("0.01").times(item.vat);
-      const vatAmountInEur = item.netPriceInEur.times(vatPercentage);
+      const itemNetAmountInEur = item.netUnitPriceInEur.times(item.quantity);
+      const itemVatAmountInEur = getVatAmountInEur(
+        itemNetAmountInEur,
+        item.vat,
+      );
       return {
-        taxInEur: amount.taxInEur.plus(vatAmountInEur),
-        totalInEur: amount.totalInEur.plus(item.netPriceInEur),
+        netInEur: amount.netInEur.plus(itemNetAmountInEur),
+        taxInEur: amount.taxInEur.plus(itemVatAmountInEur),
       };
     }),
   );

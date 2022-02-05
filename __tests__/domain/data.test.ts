@@ -55,7 +55,7 @@ describe("getOrderAmount", () => {
       gtin: `${sku}.gtin`,
       brand: `${sku}.brand`,
       category: `${sku}.category`,
-      netPriceInEur: new BigNumber("12.34"),
+      netUnitPriceInEur: new BigNumber("12.34"),
       quantity: 1,
       vat: 0,
       ...item,
@@ -64,70 +64,188 @@ describe("getOrderAmount", () => {
 
   test.each([
     [
-      "single item, 0% vat",
+      "single item, quantity = 1, 0% vat",
       [
-        makeOrderItem({ netPriceInEur: new BigNumber("9.99"), vat: 0 }),
+        makeOrderItem({
+          netUnitPriceInEur: new BigNumber("9.99"),
+          vat: 0,
+          quantity: 1,
+        }),
       ] as NonEmptyArray<OrderItem>,
-      { totalInEur: new BigNumber("9.99"), taxInEur: new BigNumber(0) },
+      { netInEur: new BigNumber("9.99"), taxInEur: new BigNumber(0) },
     ],
     [
-      "single item, 4% vat",
+      "single item, quantity > 1, 0% vat",
       [
-        makeOrderItem({ netPriceInEur: new BigNumber("1.00"), vat: 4 }),
+        makeOrderItem({
+          netUnitPriceInEur: new BigNumber("9.99"),
+          vat: 0,
+          quantity: 3,
+        }),
       ] as NonEmptyArray<OrderItem>,
-      { totalInEur: new BigNumber("1.00"), taxInEur: new BigNumber("0.04") },
+      { netInEur: new BigNumber("29.97"), taxInEur: new BigNumber(0) },
     ],
     [
-      "single item, 10% vat",
+      "single item, quantity = 1, 4% vat",
       [
-        makeOrderItem({ netPriceInEur: new BigNumber("1.00"), vat: 10 }),
+        makeOrderItem({
+          netUnitPriceInEur: new BigNumber("1.00"),
+          vat: 4,
+          quantity: 1,
+        }),
       ] as NonEmptyArray<OrderItem>,
-      { totalInEur: new BigNumber("1.00"), taxInEur: new BigNumber("0.10") },
+      { netInEur: new BigNumber("1.00"), taxInEur: new BigNumber("0.04") },
     ],
     [
-      "single item, 22% vat",
+      "single item, quantity > 1, 4% vat",
       [
-        makeOrderItem({ netPriceInEur: new BigNumber("1.00"), vat: 22 }),
+        makeOrderItem({
+          netUnitPriceInEur: new BigNumber("1.00"),
+          vat: 4,
+          quantity: 3,
+        }),
       ] as NonEmptyArray<OrderItem>,
-      { totalInEur: new BigNumber("1.00"), taxInEur: new BigNumber("0.22") },
+      { netInEur: new BigNumber("3.00"), taxInEur: new BigNumber("0.12") },
     ],
     [
-      "multiple items, no vat",
+      "single item, quantity = 1, 10% vat",
+      [
+        makeOrderItem({
+          netUnitPriceInEur: new BigNumber("1.00"),
+          vat: 10,
+          quantity: 1,
+        }),
+      ] as NonEmptyArray<OrderItem>,
+      { netInEur: new BigNumber("1.00"), taxInEur: new BigNumber("0.10") },
+    ],
+    [
+      "single item, quantity > 1, 10% vat",
+      [
+        makeOrderItem({
+          netUnitPriceInEur: new BigNumber("1.00"),
+          vat: 10,
+          quantity: 5,
+        }),
+      ] as NonEmptyArray<OrderItem>,
+      { netInEur: new BigNumber("5.00"), taxInEur: new BigNumber("0.50") },
+    ],
+    [
+      "single item, quantity = 1, 22% vat",
+      [
+        makeOrderItem({
+          netUnitPriceInEur: new BigNumber("1.00"),
+          vat: 22,
+          quantity: 1,
+        }),
+      ] as NonEmptyArray<OrderItem>,
+      { netInEur: new BigNumber("1.00"), taxInEur: new BigNumber("0.22") },
+    ],
+    [
+      "single item, quantity > 1, 22% vat",
+      [
+        makeOrderItem({
+          netUnitPriceInEur: new BigNumber("1.00"),
+          vat: 22,
+          quantity: 3,
+        }),
+      ] as NonEmptyArray<OrderItem>,
+      { netInEur: new BigNumber("3.00"), taxInEur: new BigNumber("0.66") },
+    ],
+    [
+      "multiple items, quantity = 1, no vat",
       [
         makeOrderItem({
           sku: "1",
-          netPriceInEur: new BigNumber("0.01"),
+          netUnitPriceInEur: new BigNumber("0.01"),
           vat: 0,
+          quantity: 1,
         }),
         makeOrderItem({
           sku: "2",
-          netPriceInEur: new BigNumber("0.10"),
+          netUnitPriceInEur: new BigNumber("0.10"),
           vat: 0,
+          quantity: 1,
         }),
         makeOrderItem({
           sku: "3",
-          netPriceInEur: new BigNumber("1.00"),
+          netUnitPriceInEur: new BigNumber("1.00"),
           vat: 0,
+          quantity: 1,
         }),
       ] as NonEmptyArray<OrderItem>,
-      { totalInEur: new BigNumber("1.11"), taxInEur: new BigNumber(0) },
+      { netInEur: new BigNumber("1.11"), taxInEur: new BigNumber(0) },
     ],
     [
-      "multiple items, vat",
+      "multiple items, mixed quantities, no vat",
       [
-        makeOrderItem({ sku: "4", netPriceInEur: new BigNumber("1"), vat: 4 }),
+        makeOrderItem({
+          sku: "1",
+          netUnitPriceInEur: new BigNumber("0.01"),
+          vat: 0,
+          quantity: 1,
+        }),
+        makeOrderItem({
+          sku: "2",
+          netUnitPriceInEur: new BigNumber("0.10"),
+          vat: 0,
+          quantity: 2,
+        }),
+        makeOrderItem({
+          sku: "3",
+          netUnitPriceInEur: new BigNumber("1.00"),
+          vat: 0,
+          quantity: 3,
+        }),
+      ] as NonEmptyArray<OrderItem>,
+      { netInEur: new BigNumber("3.21"), taxInEur: new BigNumber(0) },
+    ],
+    [
+      "multiple items, quantity = 1, mixed vat",
+      [
+        makeOrderItem({
+          sku: "4",
+          netUnitPriceInEur: new BigNumber("1"),
+          vat: 4,
+          quantity: 1,
+        }),
         makeOrderItem({
           sku: "10",
-          netPriceInEur: new BigNumber("10"),
+          netUnitPriceInEur: new BigNumber("10"),
           vat: 10,
+          quantity: 1,
         }),
         makeOrderItem({
           sku: "22",
-          netPriceInEur: new BigNumber("100"),
+          netUnitPriceInEur: new BigNumber("100"),
           vat: 22,
+          quantity: 1,
         }),
       ] as NonEmptyArray<OrderItem>,
-      { totalInEur: new BigNumber("111"), taxInEur: new BigNumber("23.04") },
+      { netInEur: new BigNumber("111"), taxInEur: new BigNumber("23.04") },
+    ],
+    [
+      "multiple items, mixed quantities, mixed vat",
+      [
+        makeOrderItem({
+          sku: "4",
+          netUnitPriceInEur: new BigNumber("1"),
+          vat: 4,
+          quantity: 1,
+        }), // vat 0.04
+        makeOrderItem({
+          sku: "10",
+          netUnitPriceInEur: new BigNumber("10"),
+          vat: 10,
+          quantity: 2,
+        }), // vat: 2
+        makeOrderItem({
+          sku: "22",
+          netUnitPriceInEur: new BigNumber("100"),
+          vat: 22,
+          quantity: 3,
+        }), // vat: 66
+      ] as NonEmptyArray<OrderItem>,
+      { netInEur: new BigNumber("321"), taxInEur: new BigNumber("68.04") },
     ],
   ])("%s", (_, items, expectedAmount) => {
     const order = makeOrder(items);

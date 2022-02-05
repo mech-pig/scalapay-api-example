@@ -4,7 +4,7 @@ import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 
 import { PaymentGateway, StartPaymentResult } from "@domain/application";
-import { getOrderAmount, Order } from "@domain/data";
+import { getOrderAmount, getVatAmountInEur, Order } from "@domain/data";
 
 export const SuccessResponseCodec = t.type({
   token: t.string,
@@ -88,7 +88,7 @@ export default function createScalapayGateway(
     const orderAmount = getOrderAmount(order);
     const requestData: CheckoutRequestData = {
       totalAmount: {
-        amount: orderAmount.totalInEur.toFixed(),
+        amount: orderAmount.netInEur.plus(orderAmount.taxInEur).toFixed(),
         currency: "EUR",
       },
       taxAmount: {
@@ -138,7 +138,9 @@ export default function createScalapayGateway(
         gtin: item.gtin,
         category: item.category,
         price: {
-          amount: item.netPriceInEur.toFixed(),
+          amount: item.netUnitPriceInEur
+            .plus(getVatAmountInEur(item.netUnitPriceInEur, item.vat))
+            .toFixed(),
           currency: "EUR",
         },
       })),
