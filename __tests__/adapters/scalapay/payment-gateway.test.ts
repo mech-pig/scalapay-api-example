@@ -10,7 +10,7 @@ import createScalapayGateway, {
   CheckoutConsumerData,
   CheckoutShippingData,
 } from "@adapters/scalapay/payment-gateway";
-import { getOrderAmount, Order } from "@domain/data";
+import { Order } from "@domain/data";
 
 import { omit } from "../../utils";
 
@@ -62,9 +62,16 @@ const fullOrder = {
       gtin: "1400939035767",
       brand: "acme",
       category: "electronic",
-      netPriceInEur: new BigNumber("18.54"),
+      netUnitPriceInEur: new BigNumber("6.64"),
       quantity: 2,
       vat: 10,
+      expectedAmountsInEur: {
+        vatPerUnit: new BigNumber("0.664"),
+        unitPriceWithVat: new BigNumber("7.304"),
+        netSubtotal: new BigNumber("13.28"),
+        vatSubtotal: new BigNumber("1.328"),
+        subtotal: new BigNumber("14.608"),
+      },
     },
     {
       sku: "2",
@@ -72,11 +79,23 @@ const fullOrder = {
       gtin: "2400939035766",
       brand: "acme2",
       category: "home",
-      netPriceInEur: new BigNumber("3.33"),
+      netUnitPriceInEur: new BigNumber("1.00"),
       quantity: 3,
       vat: 4,
+      expectedAmountsInEur: {
+        vatPerUnit: new BigNumber("0.04"),
+        unitPriceWithVat: new BigNumber("1.04"),
+        netSubtotal: new BigNumber("3.00"),
+        vatSubtotal: new BigNumber("0.12"),
+        subtotal: new BigNumber("3.12"),
+      },
     },
   ],
+  expectedAmountsInEur: {
+    itemsNetSubtotal: new BigNumber("16.28"),
+    itemsVatSubtotal: new BigNumber("1.448"),
+    itemsSubtotal: new BigNumber("17.728"),
+  },
 };
 
 describe("createScalapayGateway", () => {
@@ -192,10 +211,10 @@ describe("startPayment", () => {
       },
     ],
   ])(
-    "Request - %s",
+    "Scalapay /v2/order API is called - %s",
     async (
       _,
-      order,
+      input,
       expected: {
         consumer: CheckoutConsumerData;
         shipping: CheckoutShippingData;
@@ -208,25 +227,31 @@ describe("startPayment", () => {
       };
       (axios.create as jest.Mock).mockReturnValue(mockClient);
 
-      const orderAmount = getOrderAmount(order as Order);
+      const order: Order = omit("expectedAmountsInEur", {
+        ...input,
+        items: input.items.map((item) => omit("expectedAmountsInEur", item)),
+      }) as Order;
 
       const expectedArgs: CheckoutRequestData = {
         totalAmount: {
-          amount: orderAmount.totalInEur.toFixed(),
+          amount: input.expectedAmountsInEur.itemsSubtotal.toFixed(),
           currency: "EUR",
         },
-        taxAmount: { amount: orderAmount.taxInEur.toFixed(), currency: "EUR" },
+        taxAmount: {
+          amount: input.expectedAmountsInEur.itemsVatSubtotal.toFixed(),
+          currency: "EUR",
+        },
         consumer: expected.consumer,
         ...(expected.billing ? { billing: expected.billing } : {}),
         shipping: expected.shipping,
-        items: order.items.map((item) => ({
+        items: input.items.map((item) => ({
           sku: item.sku,
           quantity: item.quantity as Int,
           name: item.name,
           gtin: item.gtin,
           category: item.category,
           price: {
-            amount: item.netPriceInEur.toFixed(),
+            amount: item.expectedAmountsInEur.unitPriceWithVat.toFixed(),
             currency: "EUR",
           },
         })),
@@ -251,8 +276,13 @@ describe("startPayment", () => {
     };
     (axios.create as jest.Mock).mockReturnValue(mockClient);
 
+    const order: Order = omit("expectedAmountsInEur", {
+      ...fullOrder,
+      items: fullOrder.items.map((item) => omit("expectedAmountsInEur", item)),
+    }) as Order;
+
     const gateway = createScalapayGateway(config);
-    const result = await gateway.startPayment(fullOrder as Order);
+    const result = await gateway.startPayment(order);
     expect(result).toStrictEqual(E.left({ type: "PaymentGatewayError" }));
   });
 
@@ -264,10 +294,13 @@ describe("startPayment", () => {
     };
     (axios.create as jest.Mock).mockReturnValue(mockClient);
 
+    const order: Order = omit("expectedAmountsInEur", {
+      ...fullOrder,
+      items: fullOrder.items.map((item) => omit("expectedAmountsInEur", item)),
+    }) as Order;
+
     const gateway = createScalapayGateway(config);
-    await expect(
-      gateway.startPayment(fullOrder as Order),
-    ).rejects.toStrictEqual(error);
+    await expect(gateway.startPayment(order)).rejects.toStrictEqual(error);
   });
 
   test("Success - checkout info are returned", async () => {
@@ -286,8 +319,13 @@ describe("startPayment", () => {
     };
     (axios.create as jest.Mock).mockReturnValue(mockClient);
 
+    const order: Order = omit("expectedAmountsInEur", {
+      ...fullOrder,
+      items: fullOrder.items.map((item) => omit("expectedAmountsInEur", item)),
+    }) as Order;
+
     const gateway = createScalapayGateway(config);
-    const result = await gateway.startPayment(fullOrder as Order);
+    const result = await gateway.startPayment(order);
     expect(result).toStrictEqual(expectedResult);
   });
 });
