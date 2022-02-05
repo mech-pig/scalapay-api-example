@@ -7,7 +7,7 @@ import { NonEmptyArray, map, mapWithIndex } from "fp-ts/NonEmptyArray";
 import createApplication, {
   CreateOrderRequest,
   PaymentGateway,
-  StartPaymentResult,
+  CheckoutResult,
 } from "@domain/application";
 import createHttpServer from "@entrypoints/http";
 import { Order, Product } from "@domain/data";
@@ -192,14 +192,14 @@ describe("createOrder", () => {
   test.each([
     [
       "PaymentGatewayError",
-      (_: Order): Promise<StartPaymentResult> =>
+      (_: Order): Promise<CheckoutResult> =>
         Promise.resolve(E.left({ type: "PaymentGatewayError" })),
       500,
       { type: "PaymentGatewayError" },
     ],
     [
       "unhandled",
-      (_: Order): Promise<StartPaymentResult> => Promise.reject(),
+      (_: Order): Promise<CheckoutResult> => Promise.reject(),
       500,
       { type: "InternalServerError" },
     ],
@@ -207,13 +207,13 @@ describe("createOrder", () => {
     "Error - PaymentGateway/%s",
     async (
       _,
-      startPaymentMock: (order: Order) => Promise<StartPaymentResult>,
+      startPaymentMock: (order: Order) => Promise<CheckoutResult>,
       expectedStatus: number,
       expectedPayload: {},
     ) => {
       const request = defaultRequest;
       const products = defaultAvailableProducts;
-      const paymentGateway = { startPayment: startPaymentMock };
+      const paymentGateway = { checkout: startPaymentMock };
       const response = await testClient(products, paymentGateway)
         .post("/orders")
         .send(request);
@@ -299,12 +299,12 @@ describe("createOrder", () => {
     ] as NonEmptyArray<Product>;
 
     const paymentGateway = {
-      startPayment: jest.fn(defaultPaymentGateway.startPayment),
+      checkout: jest.fn(defaultPaymentGateway.checkout),
     };
     await testClient(products, paymentGateway).post("/orders").send(request);
 
-    expect(paymentGateway.startPayment).toHaveBeenCalledTimes(1);
-    expect(paymentGateway.startPayment).toHaveBeenCalledWith(expectedOrder);
+    expect(paymentGateway.checkout).toHaveBeenCalledTimes(1);
+    expect(paymentGateway.checkout).toHaveBeenCalledWith(expectedOrder);
   });
 
   test("Success - payment details are returned", async () => {
@@ -313,7 +313,7 @@ describe("createOrder", () => {
     const responseFromPaymentGateway = { redirectUrl: "sentinel" };
 
     const paymentGateway = {
-      startPayment: (_: Order) =>
+      checkout: (_: Order) =>
         Promise.resolve(E.right(responseFromPaymentGateway)),
     };
     const response = await testClient(products, paymentGateway)
@@ -322,7 +322,7 @@ describe("createOrder", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
-      paymentGatewayRedirectUrl: responseFromPaymentGateway.redirectUrl,
+      checkoutUrl: responseFromPaymentGateway.redirectUrl,
     });
   });
 });

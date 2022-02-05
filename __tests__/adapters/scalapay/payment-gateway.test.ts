@@ -114,7 +114,7 @@ describe("createScalapayGateway", () => {
   });
 });
 
-describe("startPayment", () => {
+describe("checkout", () => {
   const defaultExpectedData = {
     consumer: {
       givenNames: fullOrder.user.firstName,
@@ -263,7 +263,7 @@ describe("startPayment", () => {
       };
 
       const gateway = createScalapayGateway(config);
-      await gateway.startPayment(order as Order).catch(() => "not relevant");
+      await gateway.checkout(order as Order).catch(() => "not relevant");
       expect(mockClient.post).toHaveBeenCalledTimes(1);
       expect(mockClient.post).toHaveBeenCalledWith("/v2/orders", expectedArgs);
     },
@@ -282,7 +282,7 @@ describe("startPayment", () => {
     }) as Order;
 
     const gateway = createScalapayGateway(config);
-    const result = await gateway.startPayment(order);
+    const result = await gateway.checkout(order);
     expect(result).toStrictEqual(E.left({ type: "PaymentGatewayError" }));
   });
 
@@ -300,7 +300,7 @@ describe("startPayment", () => {
     }) as Order;
 
     const gateway = createScalapayGateway(config);
-    await expect(gateway.startPayment(order)).rejects.toStrictEqual(error);
+    await expect(gateway.checkout(order)).rejects.toStrictEqual(error);
   });
 
   test("Success - checkout info are returned", async () => {
@@ -325,7 +325,7 @@ describe("startPayment", () => {
     }) as Order;
 
     const gateway = createScalapayGateway(config);
-    const result = await gateway.startPayment(order);
+    const result = await gateway.checkout(order);
     expect(result).toStrictEqual(expectedResult);
   });
 });
