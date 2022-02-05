@@ -3,7 +3,7 @@ import * as t from "io-ts";
 import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 
-import { PaymentGateway, StartPaymentResult } from "@domain/application";
+import { PaymentGateway, CheckoutResult } from "@domain/application";
 import { getOrderAmount, getVatAmountInEur, Order } from "@domain/data";
 
 export const SuccessResponseCodec = t.type({
@@ -84,7 +84,7 @@ export default function createScalapayGateway(
     },
   });
 
-  async function startPayment(order: Order): Promise<StartPaymentResult> {
+  async function checkout(order: Order): Promise<CheckoutResult> {
     const orderAmount = getOrderAmount(order);
     const requestData: CheckoutRequestData = {
       totalAmount: {
@@ -160,5 +160,5 @@ export default function createScalapayGateway(
     );
   }
 
-  return { startPayment };
+  return { checkout };
 }

@@ -14,7 +14,7 @@ import {
 } from "@domain/data";
 
 export type OrderCreated = {
-  paymentGatewayRedirectUrl: string;
+  checkoutUrl: string;
 };
 
 export const UnavailableProductsErrorCodec = t.type({
@@ -52,13 +52,13 @@ export const PaymentGatewayErrorCodec = t.type({
 });
 export type PaymentGatewayError = t.TypeOf<typeof PaymentGatewayErrorCodec>;
 
-export const PaymentStartedCodec = t.type({ redirectUrl: t.string });
-export type PaymentStarted = t.TypeOf<typeof PaymentStartedCodec>;
+export const CheckoutCodec = t.type({ redirectUrl: t.string });
+export type Checkout = t.TypeOf<typeof CheckoutCodec>;
 
-export type StartPaymentResult = E.Either<PaymentGatewayError, PaymentStarted>;
+export type CheckoutResult = E.Either<PaymentGatewayError, Checkout>;
 
 export interface PaymentGateway {
-  startPayment(order: Order): Promise<StartPaymentResult>;
+  checkout(order: Order): Promise<CheckoutResult>;
 }
 
 export default function createApplication(
@@ -117,10 +117,8 @@ export default function createApplication(
     };
 
     return paymentGateway
-      .startPayment(order)
-      .then(
-        E.map((result) => ({ paymentGatewayRedirectUrl: result.redirectUrl })),
-      );
+      .checkout(order)
+      .then(E.map((result) => ({ checkoutUrl: result.redirectUrl })));
   }
 
   return { createOrder };
