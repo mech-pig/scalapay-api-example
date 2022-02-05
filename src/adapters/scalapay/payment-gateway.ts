@@ -50,6 +50,7 @@ export type CheckoutShippingData = {
 export type CheckoutRequestData = {
   totalAmount: { amount: string; currency: "EUR" };
   taxAmount: { amount: string; currency: "EUR" };
+  shippingAmount: { amount: string; currency: "EUR" };
   consumer: CheckoutConsumerData;
   billing?: CheckoutBillingData;
   shipping: CheckoutShippingData;
@@ -88,11 +89,15 @@ export default function createScalapayGateway(
     const orderAmount = getOrderAmount(order);
     const requestData: CheckoutRequestData = {
       totalAmount: {
-        amount: orderAmount.netInEur.plus(orderAmount.taxInEur).toFixed(),
+        amount: orderAmount.orderTotalInEur.toFixed(),
         currency: "EUR",
       },
       taxAmount: {
-        amount: orderAmount.taxInEur.toFixed(),
+        amount: orderAmount.orderVatSubtotalInEur.toFixed(),
+        currency: "EUR",
+      },
+      shippingAmount: {
+        amount: orderAmount.shippingSubtotalInEur.toFixed(),
         currency: "EUR",
       },
       consumer: {
@@ -122,14 +127,14 @@ export default function createScalapayGateway(
           }
         : {}),
       shipping: {
-        ...(order.shipping.phoneNumber
-          ? { phoneNumber: order.shipping.phoneNumber }
+        ...(order.shipping.to.phoneNumber
+          ? { phoneNumber: order.shipping.to.phoneNumber }
           : {}),
-        countryCode: order.shipping.address.countryCode,
-        name: order.shipping.name,
-        postcode: order.shipping.address.postCode,
-        suburb: order.shipping.address.city,
-        line1: order.shipping.address.addressLine,
+        countryCode: order.shipping.to.address.countryCode,
+        name: order.shipping.to.name,
+        postcode: order.shipping.to.address.postCode,
+        suburb: order.shipping.to.address.city,
+        line1: order.shipping.to.address.addressLine,
       },
       items: order.items.map((item) => ({
         sku: item.sku,

@@ -46,14 +46,18 @@ const fullOrder = {
     phoneNumber: "+2 3456 7890",
   },
   shipping: {
-    name: "test",
-    address: {
-      countryCode: "IT",
-      city: "Milano",
-      postCode: "20100",
-      addressLine: "Vicolo Stretto, 1",
+    to: {
+      name: "test",
+      address: {
+        countryCode: "IT",
+        city: "Milano",
+        postCode: "20100",
+        addressLine: "Vicolo Stretto, 1",
+      },
+      phoneNumber: "+3 4567 8901",
     },
-    phoneNumber: "+3 4567 8901",
+    netPriceInEur: new BigNumber("2.00"),
+    vat: 22,
   },
   items: [
     {
@@ -95,6 +99,10 @@ const fullOrder = {
     itemsNetSubtotal: new BigNumber("16.28"),
     itemsVatSubtotal: new BigNumber("1.448"),
     itemsSubtotal: new BigNumber("17.728"),
+    shippingVatSubtotal: new BigNumber("0.44"),
+    shippingSubtotal: new BigNumber("2.44"),
+    orderVatSubtotal: new BigNumber("1.888"),
+    orderTotal: new BigNumber("20.168"),
   },
 };
 
@@ -123,12 +131,12 @@ describe("checkout", () => {
       phoneNumber: fullOrder.user.phoneNumber,
     },
     shipping: {
-      name: fullOrder.shipping.name,
-      phoneNumber: fullOrder.shipping.phoneNumber,
-      countryCode: fullOrder.shipping.address.countryCode,
-      postcode: fullOrder.shipping.address.postCode,
-      suburb: fullOrder.shipping.address.city,
-      line1: fullOrder.shipping.address.addressLine,
+      name: fullOrder.shipping.to.name,
+      phoneNumber: fullOrder.shipping.to.phoneNumber,
+      countryCode: fullOrder.shipping.to.address.countryCode,
+      postcode: fullOrder.shipping.to.address.postCode,
+      suburb: fullOrder.shipping.to.address.city,
+      line1: fullOrder.shipping.to.address.addressLine,
     },
     billing: {
       name: fullOrder.billing.name,
@@ -159,10 +167,13 @@ describe("checkout", () => {
       },
     ],
     [
-      "missing: shipping.phoneNumber",
+      "missing: shipping.to.phoneNumber",
       {
         ...fullOrder,
-        shipping: omit("phoneNumber", fullOrder.shipping),
+        shipping: {
+          ...fullOrder.shipping,
+          to: omit("phoneNumber", fullOrder.shipping.to),
+        },
       },
       {
         ...defaultExpectedData,
@@ -234,11 +245,15 @@ describe("checkout", () => {
 
       const expectedArgs: CheckoutRequestData = {
         totalAmount: {
-          amount: input.expectedAmountsInEur.itemsSubtotal.toFixed(),
+          amount: input.expectedAmountsInEur.orderTotal.toFixed(),
           currency: "EUR",
         },
         taxAmount: {
-          amount: input.expectedAmountsInEur.itemsVatSubtotal.toFixed(),
+          amount: input.expectedAmountsInEur.orderVatSubtotal.toFixed(),
+          currency: "EUR",
+        },
+        shippingAmount: {
+          amount: input.expectedAmountsInEur.shippingSubtotal.toFixed(),
           currency: "EUR",
         },
         consumer: expected.consumer,

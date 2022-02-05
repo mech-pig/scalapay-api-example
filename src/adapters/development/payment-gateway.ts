@@ -5,6 +5,6 @@ import { Order } from "@domain/data";
 export default function createMockPaymentGateway(): PaymentGateway {
   return {
     checkout: (order: Order) =>
-      Promise.resolve(E.right({ redirectUrl: order.shipping.name })),
+      Promise.resolve(E.right({ redirectUrl: order.shipping.to.name })),
   };
 }

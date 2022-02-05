@@ -6,12 +6,13 @@ import { failure } from "io-ts/PathReporter";
 
 import createHttpServer from "@entrypoints/http";
 import createApplication from "@domain/application";
-import { Product } from "@domain/data";
+import { Product, Vat } from "@domain/data";
 import createScalapayGateway, {
   ScalapayGatewayConfigCodec,
 } from "@adapters/scalapay/payment-gateway";
+import createMockShippingService from "@adapters/development/shipping-service";
 
-const products: Product[] = [
+const PRODUCTS: Product[] = [
   {
     sku: "0",
     name: "product-0",
@@ -41,6 +42,11 @@ const products: Product[] = [
   },
 ];
 
+const SHIPPING_PRICE = {
+  netPriceInEur: new BigNumber("5.00"),
+  vat: 22 as Vat,
+};
+
 const ConfigCodec = t.type({
   httpPort: t.Int,
   scalapay: ScalapayGatewayConfigCodec,
@@ -69,7 +75,11 @@ const server = pipe(
   }),
   ({ httpPort, scalapay }) => {
     const gateway = createScalapayGateway(scalapay);
-    const application = createApplication(products, gateway);
+    const shippingService = createMockShippingService(
+      SHIPPING_PRICE.netPriceInEur,
+      SHIPPING_PRICE.vat,
+    );
+    const application = createApplication(PRODUCTS, gateway, shippingService);
     return createHttpServer(application)
       .listen(httpPort, () =>
         console.log(`Server listenning on port ${httpPort}`),
