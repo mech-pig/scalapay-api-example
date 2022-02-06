@@ -18,7 +18,7 @@ install-dev:
 
 .PHONY: dev
 dev: install-dev
-	@$(ENV_VARS) npx ts-node-dev -r tsconfig-paths/register src/index.ts
+	@$(ENV_VARS) npx ts-node-dev -r tsconfig-paths/register src/index.ts | npx pino-pretty
 
 .PHONY: format
 format:

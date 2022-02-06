@@ -15,7 +15,7 @@ import { Order, Product, Vat } from "@domain/data";
 import createMockPaymentGateway from "@adapters/development/payment-gateway";
 import createMockShippingService from "@adapters/development/shipping-service";
 
-import { omit } from "../utils";
+import { omit, noopLogger } from "../utils";
 
 const defaultShippingCost = {
   netPriceInEur: new BigNumber("1.00"),
@@ -23,8 +23,8 @@ const defaultShippingCost = {
 };
 const defaultPaymentGateway = createMockPaymentGateway();
 const defaultShippingService = createMockShippingService(
-  defaultShippingCost.netPriceInEur,
-  defaultShippingCost.vat,
+  { shippingCost: defaultShippingCost },
+  noopLogger,
 );
 
 function testClient(
@@ -34,10 +34,11 @@ function testClient(
 ) {
   const application = createApplication(
     products,
+    noopLogger,
     paymentGateway ?? defaultPaymentGateway,
     shippingService ?? defaultShippingService,
   );
-  const server = createHttpServer(application);
+  const server = createHttpServer(application, noopLogger);
   return supertest(server);
 }
 
@@ -328,8 +329,7 @@ describe("createOrder", () => {
     };
     const shippingService = {
       getCost: jest.fn(
-        createMockShippingService(shippingCost.netPriceInEur, shippingCost.vat)
-          .getCost,
+        createMockShippingService({ shippingCost }, noopLogger).getCost,
       ),
     };
     await testClient(products, paymentGateway, shippingService)

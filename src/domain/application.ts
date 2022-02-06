@@ -3,6 +3,7 @@ import { nonEmptyArray } from "io-ts-types";
 import * as E from "fp-ts/Either";
 import { NonEmptyArray, reduce } from "fp-ts/NonEmptyArray";
 import { pipe } from "fp-ts/function";
+import { Logger } from "pino";
 
 import {
   BillingInfoCodec,
@@ -64,21 +65,25 @@ export interface PaymentGateway {
   checkout(order: Order): Promise<CheckoutResult>;
 }
 
+export type ShippingCost = { netPriceInEur: BigNumber; vat: Vat };
+
 export interface ShippingService {
   getCost(
     items: NonEmptyArray<OrderItem>,
     destination: Address,
-  ): Promise<{ netPriceInEur: BigNumber; vat: Vat }>;
+  ): Promise<ShippingCost>;
 }
 
 export default function createApplication(
   products: Product[],
+  logger: Logger,
   paymentGateway: PaymentGateway,
   shippingService: ShippingService,
 ): Application {
   async function createOrder(
     request: CreateOrderRequest,
   ): Promise<CreateOrderResult> {
+    logger.info(request, "create order started");
     const requestedItems = pipe(
       request.items,
       reduce(
@@ -112,6 +117,7 @@ export default function createApplication(
         },
       ),
     );
+    logger.info(requestedItems, "requested products");
 
     if (requestedItems.productNotFoundSkus.length > 0) {
       return Promise.resolve(
@@ -124,9 +130,11 @@ export default function createApplication(
 
     const orderItems = requestedItems.orderItems as NonEmptyArray<OrderItem>;
 
+    logger.info({}, "requesting shipping costs");
     return shippingService
       .getCost(orderItems, request.shipping.address)
       .then((shippingCost) => {
+        logger.info(shippingCost, "shipping costs added to order");
         const order: Order = {
           ...request,
           shipping: {
@@ -136,9 +144,15 @@ export default function createApplication(
           },
           items: orderItems,
         };
+        logger.info({}, "starting checkout");
         return paymentGateway.checkout(order);
       })
-      .then(E.map((result) => ({ checkoutUrl: result.redirectUrl })));
+      .then(
+        E.map((result) => {
+          logger.info(result, "checkout started");
+          return { checkoutUrl: result.redirectUrl };
+        }),
+      );
   }
 
   return { createOrder };

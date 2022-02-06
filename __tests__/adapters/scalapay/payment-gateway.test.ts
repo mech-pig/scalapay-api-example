@@ -12,7 +12,7 @@ import createScalapayGateway, {
 } from "@adapters/scalapay/payment-gateway";
 import { Order } from "@domain/data";
 
-import { omit } from "../../utils";
+import { noopLogger, omit } from "../../utils";
 
 jest.mock("axios");
 
@@ -109,7 +109,7 @@ const fullOrder = {
 describe("createScalapayGateway", () => {
   test("axios instance is configured", () => {
     const config = makeTestConfig();
-    createScalapayGateway(config);
+    createScalapayGateway(config, noopLogger);
     expect(axios.create).toBeCalledWith({
       baseURL: config.baseUrl,
       timeout: config.clientTimeoutInMilliseconds,
@@ -277,7 +277,7 @@ describe("checkout", () => {
         orderExpiryMilliseconds: config.orderExpirationInMilliseconds,
       };
 
-      const gateway = createScalapayGateway(config);
+      const gateway = createScalapayGateway(config, noopLogger);
       await gateway.checkout(order as Order).catch(() => "not relevant");
       expect(mockClient.post).toHaveBeenCalledTimes(1);
       expect(mockClient.post).toHaveBeenCalledWith("/v2/orders", expectedArgs);
@@ -296,7 +296,7 @@ describe("checkout", () => {
       items: fullOrder.items.map((item) => omit("expectedAmountsInEur", item)),
     }) as Order;
 
-    const gateway = createScalapayGateway(config);
+    const gateway = createScalapayGateway(config, noopLogger);
     const result = await gateway.checkout(order);
     expect(result).toStrictEqual(E.left({ type: "PaymentGatewayError" }));
   });
@@ -314,7 +314,7 @@ describe("checkout", () => {
       items: fullOrder.items.map((item) => omit("expectedAmountsInEur", item)),
     }) as Order;
 
-    const gateway = createScalapayGateway(config);
+    const gateway = createScalapayGateway(config, noopLogger);
     await expect(gateway.checkout(order)).rejects.toStrictEqual(error);
   });
 
@@ -339,7 +339,7 @@ describe("checkout", () => {
       items: fullOrder.items.map((item) => omit("expectedAmountsInEur", item)),
     }) as Order;
 
-    const gateway = createScalapayGateway(config);
+    const gateway = createScalapayGateway(config, noopLogger);
     const result = await gateway.checkout(order);
     expect(result).toStrictEqual(expectedResult);
   });

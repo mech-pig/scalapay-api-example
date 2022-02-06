@@ -1,14 +1,20 @@
-import { ShippingService } from "@domain/application";
-import { Vat } from "@domain/data";
-import BigNumber from "bignumber.js";
+import { Logger } from "pino";
+
+import { ShippingService, ShippingCost } from "@domain/application";
+
+export type MockShippingServiceConfig = {
+  shippingCost: ShippingCost;
+};
 
 export default function createMockShippingService(
-  netPriceInEur: BigNumber,
-  vat: Vat,
+  config: MockShippingServiceConfig,
+  logger: Logger,
 ): ShippingService {
+  logger.info(config, "created mock shipping service");
   return {
     getCost() {
-      return Promise.resolve({ netPriceInEur, vat });
+      logger.info(config.shippingCost, "returning fixed shipping cost");
+      return Promise.resolve(config.shippingCost);
     },
   };
 }
