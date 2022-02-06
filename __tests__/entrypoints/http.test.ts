@@ -8,19 +8,34 @@ import createApplication, {
   CreateOrderRequest,
   PaymentGateway,
   CheckoutResult,
+  ShippingService,
 } from "@domain/application";
 import createHttpServer from "@entrypoints/http";
-import { Order, Product } from "@domain/data";
+import { Order, Product, Vat } from "@domain/data";
 import createMockPaymentGateway from "@adapters/development/payment-gateway";
+import createMockShippingService from "@adapters/development/shipping-service";
 
 import { omit } from "../utils";
 
+const defaultShippingCost = {
+  netPriceInEur: new BigNumber("1.00"),
+  vat: 22 as Vat,
+};
 const defaultPaymentGateway = createMockPaymentGateway();
+const defaultShippingService = createMockShippingService(
+  defaultShippingCost.netPriceInEur,
+  defaultShippingCost.vat,
+);
 
-function testClient(products: Product[], paymentGateway?: PaymentGateway) {
+function testClient(
+  products: Product[],
+  paymentGateway?: PaymentGateway,
+  shippingService?: ShippingService,
+) {
   const application = createApplication(
     products,
     paymentGateway ?? defaultPaymentGateway,
+    shippingService ?? defaultShippingService,
   );
   const server = createHttpServer(application);
   return supertest(server);
@@ -224,6 +239,10 @@ describe("createOrder", () => {
   );
 
   test("Success - order payment is started", async () => {
+    const shippingCost = {
+      netPriceInEur: new BigNumber("99.99"),
+      vat: 4 as Vat,
+    };
     const orderProducts: NonEmptyArray<Product> = [
       {
         sku: "included-product-0",
@@ -267,6 +286,11 @@ describe("createOrder", () => {
 
     const expectedOrder: Order = {
       ...defaultRequest,
+      shipping: {
+        to: defaultRequest.shipping,
+        netPriceInEur: shippingCost.netPriceInEur,
+        vat: shippingCost.vat,
+      },
       items: pipe(
         orderProducts,
         mapWithIndex((index, item) => {
@@ -287,6 +311,7 @@ describe("createOrder", () => {
 
     const request = {
       ...expectedOrder,
+      shipping: expectedOrder.shipping.to,
       items: pipe(
         expectedOrder.items,
         map((order) => ({ sku: order.sku, quantity: order.quantity })),
@@ -301,8 +326,21 @@ describe("createOrder", () => {
     const paymentGateway = {
       checkout: jest.fn(defaultPaymentGateway.checkout),
     };
-    await testClient(products, paymentGateway).post("/orders").send(request);
+    const shippingService = {
+      getCost: jest.fn(
+        createMockShippingService(shippingCost.netPriceInEur, shippingCost.vat)
+          .getCost,
+      ),
+    };
+    await testClient(products, paymentGateway, shippingService)
+      .post("/orders")
+      .send(request);
 
+    expect(shippingService.getCost).toHaveBeenCalledTimes(1);
+    expect(shippingService.getCost).toHaveBeenCalledWith(
+      expectedOrder.items,
+      expectedOrder.shipping.to.address,
+    );
     expect(paymentGateway.checkout).toHaveBeenCalledTimes(1);
     expect(paymentGateway.checkout).toHaveBeenCalledWith(expectedOrder);
   });

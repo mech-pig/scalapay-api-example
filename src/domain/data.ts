@@ -98,7 +98,11 @@ export type User = t.TypeOf<typeof UserCodec>;
 export const OrderCodec = t.intersection([
   t.type({
     user: UserCodec,
-    shipping: ShippingInfoCodec,
+    shipping: t.type({
+      to: ShippingInfoCodec,
+      netPriceInEur: PriceCodec,
+      vat: VatCodec,
+    }),
     items: nonEmptyArray(OrderItemCodec),
   }),
   t.partial({
@@ -107,12 +111,19 @@ export const OrderCodec = t.intersection([
 ]);
 export type Order = t.TypeOf<typeof OrderCodec>;
 
-export const AmountCodec = t.type({
-  netInEur: PriceCodec,
-  taxInEur: PriceCodec,
+export const OrderAmountCodec = t.type({
+  itemsNetSubtotalInEur: PriceCodec,
+  itemsVatSubtotalInEur: PriceCodec,
+  itemsSubtotalInEur: PriceCodec,
+  shippingNetSubtotalInEur: PriceCodec,
+  shippingVatSubtotalInEur: PriceCodec,
+  shippingSubtotalInEur: PriceCodec,
+  orderNetSubtotalInEur: PriceCodec,
+  orderVatSubtotalInEur: PriceCodec,
+  orderTotalInEur: PriceCodec,
 });
 
-export type Amount = t.TypeOf<typeof AmountCodec>;
+export type OrderAmountCodec = t.TypeOf<typeof OrderAmountCodec>;
 
 export function getVatAmountInEur(
   netAmountInEur: BigNumber,
@@ -121,15 +132,15 @@ export function getVatAmountInEur(
   return new BigNumber("0.01").times(vat).times(netAmountInEur);
 }
 
-export function getOrderAmount(order: Order): Amount {
-  const zero: Amount = {
+export function getOrderAmount(order: Order): OrderAmountCodec {
+  const itemsAmount = {
     netInEur: new BigNumber(0),
-    taxInEur: new BigNumber(0),
+    vatInEur: new BigNumber(0),
   };
 
   return pipe(
     order.items,
-    reduce(zero, (amount, item) => {
+    reduce(itemsAmount, (amount, item) => {
       const itemNetAmountInEur = item.netUnitPriceInEur.times(item.quantity);
       const itemVatAmountInEur = getVatAmountInEur(
         itemNetAmountInEur,
@@ -137,8 +148,42 @@ export function getOrderAmount(order: Order): Amount {
       );
       return {
         netInEur: amount.netInEur.plus(itemNetAmountInEur),
-        taxInEur: amount.taxInEur.plus(itemVatAmountInEur),
+        vatInEur: amount.vatInEur.plus(itemVatAmountInEur),
       };
     }),
+    (itemsSubtotal) => {
+      const itemsNetSubtotalInEur = itemsSubtotal.netInEur;
+      const itemsVatSubtotalInEur = itemsSubtotal.vatInEur;
+      const itemsSubtotalInEur = itemsNetSubtotalInEur.plus(
+        itemsVatSubtotalInEur,
+      );
+      const shippingNetSubtotalInEur = order.shipping.netPriceInEur;
+      const shippingVatSubtotalInEur = getVatAmountInEur(
+        shippingNetSubtotalInEur,
+        order.shipping.vat,
+      );
+      const shippingSubtotalInEur = shippingNetSubtotalInEur.plus(
+        shippingVatSubtotalInEur,
+      );
+      const orderNetSubtotalInEur = itemsNetSubtotalInEur.plus(
+        shippingNetSubtotalInEur,
+      );
+      const orderVatSubtotalInEur = itemsVatSubtotalInEur.plus(
+        shippingVatSubtotalInEur,
+      );
+      const orderTotalInEur = orderNetSubtotalInEur.plus(orderVatSubtotalInEur);
+
+      return {
+        itemsNetSubtotalInEur,
+        itemsVatSubtotalInEur,
+        itemsSubtotalInEur,
+        shippingNetSubtotalInEur,
+        shippingVatSubtotalInEur,
+        shippingSubtotalInEur,
+        orderNetSubtotalInEur,
+        orderVatSubtotalInEur,
+        orderTotalInEur,
+      };
+    },
   );
 }

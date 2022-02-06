@@ -11,7 +11,10 @@ import {
   Order,
   OrderItem,
   UserCodec,
+  Address,
+  Vat,
 } from "@domain/data";
+import BigNumber from "bignumber.js";
 
 export type OrderCreated = {
   checkoutUrl: string;
@@ -61,9 +64,17 @@ export interface PaymentGateway {
   checkout(order: Order): Promise<CheckoutResult>;
 }
 
+export interface ShippingService {
+  getCost(
+    items: NonEmptyArray<OrderItem>,
+    destination: Address,
+  ): Promise<{ netPriceInEur: BigNumber; vat: Vat }>;
+}
+
 export default function createApplication(
   products: Product[],
   paymentGateway: PaymentGateway,
+  shippingService: ShippingService,
 ): Application {
   async function createOrder(
     request: CreateOrderRequest,
@@ -111,13 +122,22 @@ export default function createApplication(
       );
     }
 
-    const order: Order = {
-      ...request,
-      items: requestedItems.orderItems as NonEmptyArray<OrderItem>,
-    };
+    const orderItems = requestedItems.orderItems as NonEmptyArray<OrderItem>;
 
-    return paymentGateway
-      .checkout(order)
+    return shippingService
+      .getCost(orderItems, request.shipping.address)
+      .then((shippingCost) => {
+        const order: Order = {
+          ...request,
+          shipping: {
+            to: request.shipping,
+            netPriceInEur: shippingCost.netPriceInEur,
+            vat: shippingCost.vat,
+          },
+          items: orderItems,
+        };
+        return paymentGateway.checkout(order);
+      })
       .then(E.map((result) => ({ checkoutUrl: result.redirectUrl })));
   }
 
