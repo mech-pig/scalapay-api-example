@@ -27,6 +27,7 @@
     "express-pino-logger": "^7.0.0",
     "fp-ts": "^2.11.8",
     "io-ts": "^2.2.16",
+    "io-ts-reporters": "^2.0.1",
     "io-ts-types": "^0.5.16",
     "pino": "^7.6.5",
     "tsconfig-paths": "^3.12.0"
