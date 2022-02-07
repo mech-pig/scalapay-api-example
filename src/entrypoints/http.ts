@@ -1,8 +1,8 @@
 import { pipe } from "fp-ts/function";
-import { failure } from "io-ts/PathReporter";
+import { formatValidationErrors } from "io-ts-reporters";
 import express, { Application as ExpressApplication } from "express";
 import expressPino from "express-pino-logger";
-import { fold } from "fp-ts/Either";
+import { fold, mapLeft } from "fp-ts/Either";
 import { Logger } from "pino";
 
 import { Application, CreateOrderRequest } from "@domain/application";
@@ -15,12 +15,13 @@ function create(application: Application, logger: Logger): ExpressApplication {
   api.post("/orders", (req, res) => {
     pipe(
       CreateOrderRequest.decode(req.body),
+      mapLeft(formatValidationErrors),
       fold(
         (validationErrors) => {
           res.status(422);
           res.json({
             type: "InvalidRequest",
-            errors: failure(validationErrors),
+            errors: validationErrors,
           });
         },
         (createOrderRequest) => {
