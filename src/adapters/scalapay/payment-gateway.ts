@@ -2,6 +2,7 @@ import axios from "axios";
 import * as t from "io-ts";
 import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
+import { Logger } from "pino";
 
 import { PaymentGateway, CheckoutResult } from "@domain/application";
 import { getOrderAmount, getVatAmountInEur, Order } from "@domain/data";
@@ -74,7 +75,11 @@ export type CheckoutRequestData = {
 
 export default function createScalapayGateway(
   config: ScalapayGatewayConfig,
+  logger: Logger,
 ): PaymentGateway {
+  const { authToken: _, ...configSafeToLog } = config;
+  logger.info(configSafeToLog, "created scalapay payment gateway");
+
   const client = axios.create({
     baseURL: config.baseUrl,
     timeout: config.clientTimeoutInMilliseconds,
@@ -87,6 +92,8 @@ export default function createScalapayGateway(
 
   async function checkout(order: Order): Promise<CheckoutResult> {
     const orderAmount = getOrderAmount(order);
+    logger.info(orderAmount, "evaluated order amount");
+
     const requestData: CheckoutRequestData = {
       totalAmount: {
         amount: orderAmount.orderTotalInEur.toFixed(),
@@ -156,13 +163,21 @@ export default function createScalapayGateway(
       orderExpiryMilliseconds: config.orderExpirationInMilliseconds,
     };
 
-    return client.post("/v2/orders", requestData).then((response) =>
-      pipe(
+    logger.info(requestData, "calling scalapay api to start checkout");
+
+    return client.post("/v2/orders", requestData).then((response) => {
+      const responseInfo = {
+        data: response.data,
+        status: response.status,
+        headers: response.headers,
+      };
+      logger.info(responseInfo, "received response from scalapay");
+      return pipe(
         SuccessResponseCodec.decode(response.data),
         E.map(({ checkoutUrl }) => ({ redirectUrl: checkoutUrl })),
         E.mapLeft((_) => ({ type: "PaymentGatewayError" })),
-      ),
-    );
+      );
+    });
   }
 
   return { checkout };

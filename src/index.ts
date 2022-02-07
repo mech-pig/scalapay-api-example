@@ -3,6 +3,7 @@ import { pipe } from "fp-ts/function";
 import * as E from "fp-ts/Either";
 import * as t from "io-ts";
 import { failure } from "io-ts/PathReporter";
+import pino from "pino";
 
 import createHttpServer from "@entrypoints/http";
 import createApplication from "@domain/application";
@@ -42,7 +43,7 @@ const PRODUCTS: Product[] = [
   },
 ];
 
-const SHIPPING_PRICE = {
+const SHIPPING_COST = {
   netPriceInEur: new BigNumber("5.00"),
   vat: 22 as Vat,
 };
@@ -74,16 +75,20 @@ const server = pipe(
     process.exit(1);
   }),
   ({ httpPort, scalapay }) => {
-    const gateway = createScalapayGateway(scalapay);
+    const logger = pino();
+    const gateway = createScalapayGateway(scalapay, logger);
     const shippingService = createMockShippingService(
-      SHIPPING_PRICE.netPriceInEur,
-      SHIPPING_PRICE.vat,
+      { shippingCost: SHIPPING_COST },
+      logger,
     );
-    const application = createApplication(PRODUCTS, gateway, shippingService);
-    return createHttpServer(application)
-      .listen(httpPort, () =>
-        console.log(`Server listenning on port ${httpPort}`),
-      )
+    const application = createApplication(
+      PRODUCTS,
+      logger,
+      gateway,
+      shippingService,
+    );
+    return createHttpServer(application, logger)
+      .listen(httpPort, () => logger.info({ httpPort }, "server is ready"))
       .on("error", (error) => {
         console.error(error);
         process.exit(1);

@@ -1,12 +1,16 @@
 import { pipe } from "fp-ts/function";
 import { failure } from "io-ts/PathReporter";
 import express, { Application as ExpressApplication } from "express";
-import { Application, CreateOrderRequest } from "@domain/application";
+import expressPino from "express-pino-logger";
 import { fold } from "fp-ts/Either";
+import { Logger } from "pino";
 
-function create(application: Application): ExpressApplication {
+import { Application, CreateOrderRequest } from "@domain/application";
+
+function create(application: Application, logger: Logger): ExpressApplication {
   const api = express();
   api.use(express.json());
+  api.use(expressPino({ logger }));
 
   api.post("/orders", (req, res) => {
     pipe(
@@ -27,6 +31,7 @@ function create(application: Application): ExpressApplication {
                 result,
                 fold(
                   (error) => {
+                    logger.info(error, "create order request failed");
                     if (error.type === "UnavailableProducts") {
                       return { status: 400, data: error as {} };
                     }
@@ -41,7 +46,7 @@ function create(application: Application): ExpressApplication {
               ),
             )
             .catch((error) => {
-              console.error(error);
+              logger.error(error);
               res.status(500);
               res.json({
                 type: "InternalServerError",
