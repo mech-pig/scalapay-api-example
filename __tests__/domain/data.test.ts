@@ -8,6 +8,7 @@ import {
   PriceCodec,
   getOrderAmount,
   Vat,
+  Price,
 } from "@domain/data";
 
 describe("Price", () => {
@@ -29,6 +30,12 @@ describe("Price", () => {
     const expected = new BigNumber(value);
     const result = PriceCodec.decode(value);
     expect(result).toEqual(E.right(expected));
+  });
+
+  test("encode", () => {
+    const price = new BigNumber(0.01) as Price;
+    const expected = "0.01";
+    expect(PriceCodec.encode(price)).toStrictEqual(expected);
   });
 });
 
