@@ -1,17 +1,28 @@
 {
   "user": {
-    "firstName": "test.user.firstName",
-    "lastName": "test.user.lastName"
+    "firstName": "First",
+    "lastName": "Last",
+    "phoneNumber": "+0 123 456789"
   },
   "shipping": {
-    "name": "test",
+    "name": "Peter Griffin",
+    "phoneNumber": "+1 234 567890",
     "address": {
-      "countryCode": "IT",
-      "city": "Milano",
-      "postCode": "20100",
-      "addressLine": "Vicolo Stretto, 1"
-    },
-    "phoneNumber": "+39 000 000000"
+      "countryCode": "US",
+      "city": "Quahog",
+      "postCode": "00000",
+      "addressLine": "31 Spooner Street"
+    }
+  },
+  "billing": {
+    "name": "Homer J. Simpson",
+    "phoneNumber": "+2 345 678901",
+    "address": {
+      "countryCode": "US",
+      "city": "Springfield",
+      "postCode": "00000",
+      "addressLine": "742 Evergreen Terrace"
+    }
   },
   "items": [
     {
