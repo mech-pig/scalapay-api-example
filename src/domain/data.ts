@@ -5,6 +5,8 @@ import BigNumber from "bignumber.js";
 import { pipe } from "fp-ts/function";
 import { reduce } from "fp-ts/NonEmptyArray";
 
+import { PositiveCodec } from "@libs/types";
+
 export const PriceCodec = new t.Type<BigNumber, string, unknown>(
   "PriceCodec",
   (u): u is BigNumber => u instanceof BigNumber,
@@ -22,6 +24,9 @@ export const PriceCodec = new t.Type<BigNumber, string, unknown>(
   (a) => a.toFixed(),
 );
 export type Price = t.TypeOf<typeof PriceCodec>;
+
+export const QuantityCodec = t.intersection([t.Int, PositiveCodec]);
+export type Quantity = t.TypeOf<typeof QuantityCodec>;
 
 export const VatCodec = t.union([
   t.literal(0),
@@ -77,7 +82,7 @@ export type BillingInfo = t.TypeOf<typeof BillingInfoCodec>;
 export const OrderItemCodec = t.intersection([
   ProductCodec,
   t.type({
-    quantity: t.number,
+    quantity: QuantityCodec,
   }),
 ]);
 export type OrderItem = t.TypeOf<typeof OrderItemCodec>;

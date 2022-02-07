@@ -9,6 +9,8 @@ import {
   getOrderAmount,
   Vat,
   Price,
+  Quantity,
+  QuantityCodec,
 } from "@domain/data";
 
 describe("Price", () => {
@@ -36,6 +38,20 @@ describe("Price", () => {
     const price = new BigNumber(0.01) as Price;
     const expected = "0.01";
     expect(PriceCodec.encode(price)).toStrictEqual(expected);
+  });
+});
+
+describe("Quantity", () => {
+  test.each([
+    ["non number", "not-a-number"],
+    ["negative number", "-1"],
+    ["zero", 0],
+    ["non integer", 0.1],
+    ["null", null],
+    ["undefined", undefined],
+  ])("can't decode %s", (_, value) => {
+    const result = QuantityCodec.decode(value);
+    expect(E.isLeft(result)).toBe(true);
   });
 });
 
@@ -76,7 +92,7 @@ describe("getOrderAmount", () => {
       brand: `${sku}.brand`,
       category: `${sku}.category`,
       netUnitPriceInEur: new BigNumber("12.34"),
-      quantity: 1,
+      quantity: 1 as Quantity,
       vat: 0,
       ...item,
     };
@@ -89,7 +105,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("9.99"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -114,7 +130,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("9.99"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -139,7 +155,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("9.99"),
           vat: 0,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -164,7 +180,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("9.99"),
           vat: 0,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -189,7 +205,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 4,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -214,7 +230,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 4,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -239,7 +255,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 4,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -264,7 +280,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 4,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -289,7 +305,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 10,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -314,7 +330,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 10,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -339,7 +355,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 10,
-          quantity: 5,
+          quantity: 5 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -364,7 +380,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 10,
-          quantity: 5,
+          quantity: 5 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -389,7 +405,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 22,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -414,7 +430,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 22,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -439,7 +455,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 22,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -464,7 +480,7 @@ describe("getOrderAmount", () => {
         makeOrderItem({
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 22,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -490,19 +506,19 @@ describe("getOrderAmount", () => {
           sku: "1",
           netUnitPriceInEur: new BigNumber("0.01"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "2",
           netUnitPriceInEur: new BigNumber("0.10"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "3",
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -528,19 +544,19 @@ describe("getOrderAmount", () => {
           sku: "1",
           netUnitPriceInEur: new BigNumber("0.01"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "2",
           netUnitPriceInEur: new BigNumber("0.10"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "3",
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -566,19 +582,19 @@ describe("getOrderAmount", () => {
           sku: "1",
           netUnitPriceInEur: new BigNumber("0.01"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "2",
           netUnitPriceInEur: new BigNumber("0.10"),
           vat: 0,
-          quantity: 2,
+          quantity: 2 as Quantity,
         }),
         makeOrderItem({
           sku: "3",
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 0,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -604,19 +620,19 @@ describe("getOrderAmount", () => {
           sku: "1",
           netUnitPriceInEur: new BigNumber("0.01"),
           vat: 0,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "2",
           netUnitPriceInEur: new BigNumber("0.10"),
           vat: 0,
-          quantity: 2,
+          quantity: 2 as Quantity,
         }),
         makeOrderItem({
           sku: "3",
           netUnitPriceInEur: new BigNumber("1.00"),
           vat: 0,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -642,19 +658,19 @@ describe("getOrderAmount", () => {
           sku: "4",
           netUnitPriceInEur: new BigNumber("1"),
           vat: 4,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "10",
           netUnitPriceInEur: new BigNumber("10"),
           vat: 10,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "22",
           netUnitPriceInEur: new BigNumber("100"),
           vat: 22,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -680,19 +696,19 @@ describe("getOrderAmount", () => {
           sku: "4",
           netUnitPriceInEur: new BigNumber("1"),
           vat: 4,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "10",
           netUnitPriceInEur: new BigNumber("10"),
           vat: 10,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
         makeOrderItem({
           sku: "22",
           netUnitPriceInEur: new BigNumber("100"),
           vat: 22,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }),
       ] as NonEmptyArray<OrderItem>,
       {
@@ -718,19 +734,19 @@ describe("getOrderAmount", () => {
           sku: "4",
           netUnitPriceInEur: new BigNumber("1"),
           vat: 4,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }), // vat 0.04
         makeOrderItem({
           sku: "10",
           netUnitPriceInEur: new BigNumber("10"),
           vat: 10,
-          quantity: 2,
+          quantity: 2 as Quantity,
         }), // vat: 2
         makeOrderItem({
           sku: "22",
           netUnitPriceInEur: new BigNumber("100"),
           vat: 22,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }), // vat: 66
       ] as NonEmptyArray<OrderItem>,
       {
@@ -756,19 +772,19 @@ describe("getOrderAmount", () => {
           sku: "4",
           netUnitPriceInEur: new BigNumber("1"),
           vat: 4,
-          quantity: 1,
+          quantity: 1 as Quantity,
         }), // vat 0.04
         makeOrderItem({
           sku: "10",
           netUnitPriceInEur: new BigNumber("10"),
           vat: 10,
-          quantity: 2,
+          quantity: 2 as Quantity,
         }), // vat: 2
         makeOrderItem({
           sku: "22",
           netUnitPriceInEur: new BigNumber("100"),
           vat: 22,
-          quantity: 3,
+          quantity: 3 as Quantity,
         }), // vat: 66
       ] as NonEmptyArray<OrderItem>,
       {

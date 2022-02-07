@@ -11,7 +11,7 @@ import createApplication, {
   ShippingService,
 } from "@domain/application";
 import createHttpServer from "@entrypoints/http";
-import { Order, Product, Vat } from "@domain/data";
+import { Order, Product, Quantity, Vat } from "@domain/data";
 import createMockPaymentGateway from "@adapters/development/payment-gateway";
 import createMockShippingService from "@adapters/development/shipping-service";
 
@@ -94,7 +94,7 @@ describe("createOrder", () => {
       defaultAvailableProducts,
       mapWithIndex((index, value) => ({
         sku: value.sku,
-        quantity: index + 1,
+        quantity: (index + 1) as Quantity,
       })),
     ),
   };
@@ -161,17 +161,38 @@ describe("createOrder", () => {
     ["missing: `items`", omit("items", defaultRequest)],
     ["invalid: `items` is empty", { ...defaultRequest, items: [] }],
     [
-      "missing: `items.*.sku`",
+      "missing: `items[*].sku`",
       {
         ...defaultRequest,
         items: [...defaultRequest.items, { quantity: 2 }],
       },
     ],
     [
-      "missing: `items.*.quantity`",
+      "missing: `items[*].quantity`",
       {
         ...defaultRequest,
         items: [...defaultRequest.items, { sku: "23409832598" }],
+      },
+    ],
+    [
+      "`items[*].quantity` is zero",
+      {
+        ...defaultRequest,
+        items: [...defaultRequest.items, { sku: "23409832598", quantity: 0 }],
+      },
+    ],
+    [
+      "`items[*].quantity` is negative",
+      {
+        ...defaultRequest,
+        items: [...defaultRequest.items, { sku: "23409832598", quantity: -12 }],
+      },
+    ],
+    [
+      "`items[*].quantity` is not integer",
+      {
+        ...defaultRequest,
+        items: [...defaultRequest.items, { sku: "23409832598", quantity: 1.2 }],
       },
     ],
   ])("Invalid Request - %s", async (_, request) => {
@@ -295,7 +316,7 @@ describe("createOrder", () => {
       items: pipe(
         orderProducts,
         mapWithIndex((index, item) => {
-          const quantity = index + 1;
+          const quantity = (index + 1) as Quantity;
           return {
             sku: item.sku,
             name: item.name,
