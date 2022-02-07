@@ -36,6 +36,9 @@ function create(application: Application, logger: Logger): ExpressApplication {
                     if (error.type === "UnavailableProducts") {
                       return { status: 400, data: error as {} };
                     }
+                    if (error.type === "DuplicateItems") {
+                      return { status: 400, data: error as {} };
+                    }
                     return { status: 500, data: error as {} };
                   },
                   (orderCreated) => ({ status: 200, data: orderCreated as {} }),

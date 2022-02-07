@@ -226,6 +226,29 @@ describe("createOrder", () => {
     });
   });
 
+  test("Error - DuplicateItems", async () => {
+    const duplicateSkus = ["0", "1", "2"];
+    const requestedItems = duplicateSkus.flatMap((sku) => [
+      { sku, quantity: 1 },
+      { sku, quantity: 2 },
+      { sku, quantity: 3 },
+    ]);
+
+    const request = {
+      ...defaultRequest,
+      items: requestedItems,
+    };
+    const response = await testClient(defaultAvailableProducts)
+      .post("/orders")
+      .send(request);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({
+      type: "DuplicateItems",
+      skus: duplicateSkus,
+    });
+  });
+
   test.each([
     [
       "PaymentGatewayError",
