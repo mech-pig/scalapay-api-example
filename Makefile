@@ -54,15 +54,3 @@ docker-run:
 		-e SCALAPAY_MERCHANT_REDIRECT_FAILURE_URL=$(SCALAPAY_MERCHANT_REDIRECT_FAILURE_URL) \
 		-p 8080:8080 \
 		ts:local
-
-.PHONY: env-up
-env-up:
-	@$(ENV_VARS) docker-compose up -d
-
-.PHONY: env-down
-env-down:
-	@$(ENV_VARS) docker-compose down
-
-.PHONY: env-logs
-env-logs:
-	@$(ENV_VARS) docker-compose logs -f
