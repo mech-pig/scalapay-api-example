@@ -14,6 +14,7 @@ import {
   UserCodec,
   Address,
   Vat,
+  QuantityCodec,
 } from "@domain/data";
 import BigNumber from "bignumber.js";
 
@@ -39,7 +40,7 @@ export const CreateOrderRequest = t.intersection([
   t.type({
     user: UserCodec,
     shipping: ShippingInfoCodec,
-    items: nonEmptyArray(t.type({ sku: t.string, quantity: t.number })),
+    items: nonEmptyArray(t.type({ sku: t.string, quantity: QuantityCodec })),
   }),
   t.partial({
     billing: BillingInfoCodec,
