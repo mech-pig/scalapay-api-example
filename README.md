@@ -12,7 +12,7 @@ make docker-run
 
 By default, the application will start listening for http requests on port 8080 and it's configured to use the [Scalapay API Simulator](https://developers.scalapay.com/reference/api-simulator). You can inspect the Makefile to verify the app configuration.
 
-You can find an example of the required payload in the `examples` folder. You can test the app using your favorite command-line http client.
+You can find some examples of payloads in the `examples` folder. You can test the app using your favorite command-line http client.
 This is an example for [httpie](https://httpie.io/) that shows how to create an order:
 
 ```sh

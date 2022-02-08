@@ -1,0 +1,31 @@
+{
+  "user": {
+    "firstName": "First",
+    "lastName": "Last",
+    "phoneNumber": "+0 123 456789"
+  },
+  "shipping": {
+    "name": "First Last",
+    "phoneNumber": "+0 123 456789",
+    "address": {
+      "countryCode": "IT",
+      "city": "Milano",
+      "postCode": "20100",
+      "addressLine": "Piazza Duomo, 1"
+    }
+  },
+  "items": [
+    {
+      "sku": "not-found-0",
+      "quantity": 1
+    },
+    {
+      "sku": "not-found-1",
+      "quantity": 2
+    },
+    {
+      "sku": "1",
+      "quantity": 3
+    }
+  ]
+}
