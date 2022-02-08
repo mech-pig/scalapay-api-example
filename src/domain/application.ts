@@ -31,8 +31,15 @@ export type UnavailableProductsError = t.TypeOf<
   typeof UnavailableProductsErrorCodec
 >;
 
+export const DuplicateItemsErrorCodec = t.type({
+  type: t.literal("DuplicateItems"),
+  skus: t.array(t.string),
+});
+
+export type DuplicateItemsError = t.TypeOf<typeof DuplicateItemsErrorCodec>;
+
 export type CreateOrderResult = E.Either<
-  UnavailableProductsError | PaymentGatewayError,
+  UnavailableProductsError | DuplicateItemsError | PaymentGatewayError,
   OrderCreated
 >;
 
@@ -85,6 +92,32 @@ export default function createApplication(
     request: CreateOrderRequest,
   ): Promise<CreateOrderResult> {
     logger.info(request, "create order started");
+    const duplicateItems = pipe(
+      request.items,
+      reduce(
+        {
+          seen: new Set<string>(),
+          duplicates: new Set<string>(),
+        },
+        ({ seen, duplicates }, { sku }) => {
+          if (seen.has(sku)) {
+            duplicates.add(sku);
+          }
+          seen.add(sku);
+          return { seen, duplicates };
+        },
+      ),
+      ({ duplicates }) => duplicates,
+    );
+
+    if (duplicateItems.size > 0) {
+      logger.info({ duplicateItems }, "found duplicate items in request");
+      return E.left({
+        type: "DuplicateItems",
+        skus: Array.from(duplicateItems),
+      });
+    }
+
     const requestedItems = pipe(
       request.items,
       reduce(

@@ -54,31 +54,31 @@ Creates an order and starts the checkout.
 
 #### Request
 
-| field                          | required | type    | description                            |
-| ------------------------------ | -------- | ------- | -------------------------------------- |
-| `user`                         | yes      | object  | Info about the user creating the order |
-| `user.firstName`               | yes      | string  | First (and middle) name(s)             |
-| `user.lastName`                | yes      | string  | Last name                              |
-| `user.phoneNumber`             | no       | string  | Phone number                           |
-| `shipping`                     | yes      | object  | Shipping details                       |
-| `shipping.name`                | yes      | string  | Name                                   |
-| `shipping.phoneNumber`         | no       | string  | Phone number                           |
-| `shipping.address`             | yes      | object  | Shipping address                       |
-| `shipping.address.countryCode` | yes      | string  | Country code                           |
-| `shipping.address.city`        | yes      | string  | City                                   |
-| `shipping.address.postCode`    | yes      | string  | Postal code                            |
-| `shipping.address.addressLine` | yes      | string  | Address line                           |
-| `billing`                      | no       | object  | Billing details                        |
-| `billing.name`                 | no       | string  | Name                                   |
-| `billing.phoneNumber`          | no       | string  | Phone number                           |
-| `billing.address`              | no       | object  | Billing address                        |
-| `billing.address.countryCode`  | yes      | string  | Country code                           |
-| `billing.address.city`         | yes      | string  | City                                   |
-| `billing.address.postCode`     | yes      | string  | Postal code                            |
-| `billing.address.addressLine`  | yes      | string  | Address line                           |
-| `items`                        | yes      | array   | Order items (must not be empty)        |
-| `items[*].sku`                 | yes      | string  | Product sku                            |
-| `items[*].quantity`            | yes      | integer | Quantity                               |
+| field                          | required | type     | description                            |
+| ------------------------------ | -------- | -------- | -------------------------------------- |
+| `user`                         | yes      | object   | Info about the user creating the order |
+| `user.firstName`               | yes      | string   | First (and middle) name(s)             |
+| `user.lastName`                | yes      | string   | Last name                              |
+| `user.phoneNumber`             | no       | string   | Phone number                           |
+| `shipping`                     | yes      | object   | Shipping details                       |
+| `shipping.name`                | yes      | string   | Name                                   |
+| `shipping.phoneNumber`         | no       | string   | Phone number                           |
+| `shipping.address`             | yes      | object   | Shipping address                       |
+| `shipping.address.countryCode` | yes      | string   | Country code                           |
+| `shipping.address.city`        | yes      | string   | City                                   |
+| `shipping.address.postCode`    | yes      | string   | Postal code                            |
+| `shipping.address.addressLine` | yes      | string   | Address line                           |
+| `billing`                      | no       | object   | Billing details                        |
+| `billing.name`                 | no       | string   | Name                                   |
+| `billing.phoneNumber`          | no       | string   | Phone number                           |
+| `billing.address`              | no       | object   | Billing address                        |
+| `billing.address.countryCode`  | yes      | string   | Country code                           |
+| `billing.address.city`         | yes      | string   | City                                   |
+| `billing.address.postCode`     | yes      | string   | Postal code                            |
+| `billing.address.addressLine`  | yes      | string   | Address line                           |
+| `items`                        | yes      | object[] | Order items (must not be empty)        |
+| `items[*].sku`                 | yes      | string   | Product sku (values must not repeat)   |
+| `items[*].quantity`            | yes      | integer  | Quantity                               |
 
 example
 
@@ -112,7 +112,7 @@ example
   "items": [
     {
       "sku": "0",
-      "quantity": 1
+      "quantity": 3
     }
   ]
 }
@@ -122,13 +122,25 @@ example
 
 ##### `200 Ok`
 
-| field         | required | type   | description                           |
-| ------------- | -------- | ------ | ------------------------------------- |
-| `checkoutUrl` | yes      | string | Redirect url to complete the checkout |
+| field         | type   | description                           |
+| ------------- | ------ | ------------------------------------- |
+| `checkoutUrl` | string | Redirect url to complete the checkout |
 
 ##### `400 Bad Request`
 
-- One or more products not found.
+###### `UnavailableProducts`
+
+| field  | type                  | description                    |
+| ------ | --------------------- | ------------------------------ |
+| `type` | `UnavailableProducts` |                                |
+| `skus` | string[]              | Skus of not available products |
+
+###### `DuplicateItems`
+
+| field  | type             | description    |
+| ------ | ---------------- | -------------- |
+| `type` | `DuplicateItems` |                |
+| `skus` | string[]         | Duplicate skus |
 
 ##### `422 Unprocessable Entity`
 
