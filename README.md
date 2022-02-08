@@ -71,7 +71,7 @@ Retrieve the list of available products.
 | `items[*].brand`             | string   | Product brand                                                                  |
 | `items[*].category`          | string   | Product category                                                               |
 | `items[*].netUnitPriceInEur` | string   | Product net unit price in EUR currency                                         |
-| `items[*].vat`               | string   | Value added tax that will be applied, expressed as percentage of the net price |
+| `items[*].vat`               | integer  | Value added tax that will be applied, expressed as percentage of the net price |
 
 example:
 
@@ -186,6 +186,14 @@ example
 | field         | type   | description                           |
 | ------------- | ------ | ------------------------------------- |
 | `checkoutUrl` | string | Redirect url to complete the checkout |
+
+example:
+
+```json
+{
+  "checkoutUrl": "https://portal.staging.scalapay.com/checkout/91KZDFM8V5"
+}
+```
 
 ##### `400 Bad Request`
 
