@@ -6,11 +6,23 @@ import { fold, mapLeft } from "fp-ts/Either";
 import { Logger } from "pino";
 
 import { Application, CreateOrderRequest } from "@domain/application";
+import { ProductCodec } from "@domain/data";
 
 function create(application: Application, logger: Logger): ExpressApplication {
   const api = express();
   api.use(express.json());
   api.use(expressPino({ logger }));
+
+  api.get("/products", (_, res) => {
+    pipe(
+      application.listProducts(),
+      (products) => products.map(ProductCodec.encode),
+      (items) => {
+        res.status(200);
+        res.json({ items });
+      },
+    );
+  });
 
   api.post("/orders", (req, res) => {
     pipe(

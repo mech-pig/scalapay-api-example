@@ -57,6 +57,7 @@ export type CreateOrderRequest = t.TypeOf<typeof CreateOrderRequest>;
 
 export interface Application {
   createOrder(request: CreateOrderRequest): Promise<CreateOrderResult>;
+  listProducts(): Product[];
 }
 
 export const PaymentGatewayErrorCodec = t.type({
@@ -88,6 +89,11 @@ export default function createApplication(
   paymentGateway: PaymentGateway,
   shippingService: ShippingService,
 ): Application {
+  function listProducts(): Product[] {
+    logger.info({}, "returning available products");
+    return products;
+  }
+
   async function createOrder(
     request: CreateOrderRequest,
   ): Promise<CreateOrderResult> {
@@ -189,5 +195,5 @@ export default function createApplication(
       );
   }
 
-  return { createOrder };
+  return { createOrder, listProducts };
 }

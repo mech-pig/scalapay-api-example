@@ -35,6 +35,12 @@ X-Powered-By: Express
 }
 ```
 
+The list of available products can be obtained with:
+
+```sh
+http GET :8080/products
+```
+
 ## Configuration
 
 Configuration can be provided via the following environment variables:
@@ -47,6 +53,61 @@ Configuration can be provided via the following environment variables:
 | `SCALAPAY_MERCHANT_REDIRECT_FAILURE_URL` | url used by Scalapay to redirect users to after an unsuccessful checkout                                                                 | https://portal.staging.scalapay.com/failure-url |
 
 ## API Reference
+
+### `GET /products`
+
+Retrieve the list of available products.
+
+#### Response
+
+##### `200 Ok`
+
+| field                        | type     | description                                                                    |
+| ---------------------------- | -------- | ------------------------------------------------------------------------------ |
+| `items`                      | object[] |                                                                                |
+| `items[*].sku`               | string   | The Stock keeping unit code of the product.                                    |
+| `items[*].gtin`              | string   | Global Trade Item Number of the product                                        |
+| `items[*].name`              | string   | Product name                                                                   |
+| `items[*].brand`             | string   | Product brand                                                                  |
+| `items[*].category`          | string   | Product category                                                               |
+| `items[*].netUnitPriceInEur` | string   | Product net unit price in EUR currency                                         |
+| `items[*].vat`               | string   | Value added tax that will be applied, expressed as percentage of the net price |
+
+example:
+
+```json
+{
+  "items": [
+    {
+      "brand": "acme",
+      "category": "clothes",
+      "gtin": "0400939035768",
+      "name": "product-0",
+      "netUnitPriceInEur": "8.19",
+      "sku": "0",
+      "vat": 22
+    },
+    {
+      "brand": "acme",
+      "category": "electronic",
+      "gtin": "1400939035767",
+      "name": "product-1",
+      "netUnitPriceInEur": "17.54",
+      "sku": "1",
+      "vat": 22
+    },
+    {
+      "brand": "acme",
+      "category": "home",
+      "gtin": "2400939035766",
+      "name": "product-2",
+      "netUnitPriceInEur": "1.12",
+      "sku": "2",
+      "vat": 22
+    }
+  ]
+}
+```
 
 ### `POST /orders`
 
