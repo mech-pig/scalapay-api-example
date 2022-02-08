@@ -11,7 +11,7 @@ import createApplication, {
   ShippingService,
 } from "@domain/application";
 import createHttpServer from "@entrypoints/http";
-import { Order, Product, Quantity, Vat } from "@domain/data";
+import { Order, Product, ProductCodec, Quantity, Vat } from "@domain/data";
 import createMockPaymentGateway from "@adapters/development/payment-gateway";
 import createMockShippingService from "@adapters/development/shipping-service";
 
@@ -406,5 +406,34 @@ describe("createOrder", () => {
     expect(response.body).toStrictEqual({
       checkoutUrl: responseFromPaymentGateway.redirectUrl,
     });
+  });
+});
+
+describe("listProducts", () => {
+  test("Success - list of available products is returned", async () => {
+    const products: NonEmptyArray<Product> = [
+      {
+        sku: "0",
+        name: "product-0",
+        gtin: "0400939035768",
+        brand: "acme",
+        netUnitPriceInEur: new BigNumber("9.99"),
+        category: "clothes",
+        vat: 22,
+      },
+      {
+        sku: "1",
+        name: "product-1",
+        gtin: "1400939035767",
+        brand: "acme",
+        netUnitPriceInEur: new BigNumber("17.54"),
+        category: "electronic",
+        vat: 22,
+      },
+    ];
+    const expected = { items: products.map(ProductCodec.encode) };
+    const response = await testClient(products).get("/products").send();
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual(expected);
   });
 });
